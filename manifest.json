@@ -1,0 +1,26 @@
+{
+  "name": "Geo-Quiz - Hauptstädte lernen",
+  "short_name": "Geo-Quiz",
+  "description": "Lerne spielerisch die Hauptstädte der Welt!",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#4FC3F7",
+  "theme_color": "#FFD93D",
+  "lang": "de",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

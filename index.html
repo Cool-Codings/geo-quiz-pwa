@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Geo-Quiz - Hauptstädte lernen</title>
+  <meta name="description" content="Lerne spielerisch die Hauptstädte der Welt!" />
+  <meta name="theme-color" content="#FFD93D" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icons/icon.svg" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="app">
+
+    <!-- Start-Bildschirm -->
+    <section id="screen-start" class="screen">
+      <div class="card">
+        <div class="mascot-emoji" aria-hidden="true">🌍</div>
+        <h1>Geo-Quiz</h1>
+        <p class="subtitle">Wie gut kennst du die Hauptstädte der Welt?</p>
+
+        <div class="highscore-box">
+          🏆 Highscore: <span id="start-highscore">0</span>
+        </div>
+
+        <h2 class="difficulty-title">Wähle eine Stufe:</h2>
+        <div class="difficulty-list" id="difficulty-list">
+          <button class="difficulty-btn" data-difficulty="leicht">
+            <span class="difficulty-emoji">🟢</span>
+            <span class="difficulty-name">Leicht</span>
+          </button>
+          <button class="difficulty-btn" data-difficulty="mittel">
+            <span class="difficulty-emoji">🟡</span>
+            <span class="difficulty-name">Mittel</span>
+          </button>
+          <button class="difficulty-btn" data-difficulty="schwer">
+            <span class="difficulty-emoji">🔴</span>
+            <span class="difficulty-name">Schwer</span>
+          </button>
+        </div>
+
+        <button id="btn-start" class="btn-primary">🚀 Spiel starten</button>
+      </div>
+    </section>
+
+    <!-- Quiz-Bildschirm -->
+    <section id="screen-quiz" class="screen hidden">
+      <div class="quiz-header">
+        <div class="quiz-progress" id="quiz-progress">Frage 1 von 10</div>
+        <div class="quiz-score">⭐ <span id="quiz-score">0</span></div>
+      </div>
+
+      <div class="timer-wrap">
+        <div class="timer-bar" id="timer-bar"></div>
+      </div>
+      <div class="timer-number" id="timer-number">15</div>
+
+      <div class="card question-card">
+        <p class="question-label">Wie heißt die Hauptstadt von...?</p>
+        <h2 class="question-country" id="question-country">Land</h2>
+
+        <div class="answers-grid" id="answers-grid">
+          <button class="answer-btn" data-index="0"></button>
+          <button class="answer-btn" data-index="1"></button>
+          <button class="answer-btn" data-index="2"></button>
+          <button class="answer-btn" data-index="3"></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Ergebnis-Bildschirm -->
+    <section id="screen-result" class="screen hidden">
+      <div class="card">
+        <div class="mascot-emoji" id="result-emoji" aria-hidden="true">🎉</div>
+        <h1 id="result-title">Super gemacht!</h1>
+
+        <div class="result-stats">
+          <p class="result-score">Punkte: <span id="result-score">0</span></p>
+          <p class="result-correct"><span id="result-correct">0</span> von <span id="result-total">10</span> richtig</p>
+        </div>
+
+        <p id="result-highscore-msg" class="highscore-msg hidden">🏆 Neuer Highscore!</p>
+        <p id="result-unlock-msg" class="unlock-msg hidden">🔓 Nächste Stufe freigeschaltet!</p>
+
+        <div class="result-buttons">
+          <button id="btn-again" class="btn-primary">🔁 Nochmal spielen</button>
+          <button id="btn-home" class="btn-secondary">🏠 Zum Start</button>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
