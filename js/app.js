@@ -13,6 +13,44 @@ const MASCOT_SRC = {
   excited: 'assets/mascot/koala-excited.svg',
 };
 
+const ROUNDS_PLAYED_KEY = 'geoquiz-rounds-played';
+const LIFETIME_SCORE_KEY = 'geoquiz-lifetime-score';
+const BEST_STREAK_KEY = 'geoquiz-best-streak';
+const ACTIVE_SKIN_KEY = 'geoquiz-active-skin';
+
+const SKINS = {
+  none: { id: 'none', label: 'Standard', accessory: null, hint: null, isUnlocked: () => true },
+  hat: {
+    id: 'hat',
+    label: 'Hut',
+    accessory: 'hat',
+    hint: 'Ab 5 gespielten Runden',
+    isUnlocked: (stats) => stats.roundsPlayed >= 5,
+  },
+  sunglasses: {
+    id: 'sunglasses',
+    label: 'Sonnenbrille',
+    accessory: 'sunglasses',
+    hint: 'Ab 3 Tagen Streak',
+    isUnlocked: (stats) => stats.bestStreak >= 3,
+  },
+  scarf: {
+    id: 'scarf',
+    label: 'Schal',
+    accessory: 'scarf',
+    hint: 'Ab 300 Punkten insgesamt',
+    isUnlocked: (stats) => stats.lifetimeScore >= 300,
+  },
+  crown: {
+    id: 'crown',
+    label: 'Krone',
+    accessory: 'crown',
+    hint: 'Ab 7 Tagen Streak',
+    isUnlocked: (stats) => stats.bestStreak >= 7,
+  },
+};
+const SKIN_ORDER = ['none', 'hat', 'sunglasses', 'scarf', 'crown'];
+
 const GREETINGS = {
   morning: [
     'Guten Morgen! Bereit für ein paar knifflige Fragen? ☀️',
@@ -65,9 +103,35 @@ const STREAK_LAST_DATE_KEY = 'geoquiz-streak-last-date';
 
 const CONFETTI_COLORS = ['#FF6B6B', '#FFD93D', '#06D6A0', '#4ECDC4', '#9B5DE5', '#4FC3F7'];
 
+const HEARTS_MAX = 3;
+const HEARTS_REGEN_INTERVAL_MS = 30 * 60 * 1000;
+const HEARTS_COUNT_KEY = 'geoquiz-hearts-count';
+const HEARTS_ANCHOR_KEY = 'geoquiz-hearts-anchor';
+
+const HEARTS_DEPLETED_MESSAGES = [
+  'Kein Problem! Deine Herzen füllen sich bald wieder auf. 💛',
+  'Alle Herzen aufgebraucht - aber du hast schon tolle Punkte gesammelt! 🌟',
+];
+
 const MAP_WIDTH = 960;
 const MAP_HEIGHT = 480;
 const CITY_CLICK_TOLERANCE = 22;
+
+// Rough lon/lat bounding boxes used to auto-zoom the map to the continent
+// that contains the current question's answer.
+const CONTINENT_REGIONS = {
+  Europa: { lonMin: -11, latMin: 34, lonMax: 45, latMax: 71 },
+  Asien: { lonMin: 25, latMin: -11, lonMax: 180, latMax: 78 },
+  Afrika: { lonMin: -18, latMin: -35, lonMax: 52, latMax: 38 },
+  Nordamerika: { lonMin: -170, latMin: 5, lonMax: -50, latMax: 75 },
+  Suedamerika: { lonMin: -82, latMin: -56, lonMax: -34, latMax: 13 },
+  Ozeanien: { lonMin: 110, latMin: -48, lonMax: 180, latMax: 0 },
+};
+const MAP_ZOOM_PADDING = 0.18;
+const MAP_MIN_ZOOM_WIDTH = 60;
+const MAP_ZOOM_STEP = 1.5;
+const MAP_TAP_THRESHOLD_PX = 10;
+const MAP_ZOOM_ANIM_MS = 380;
 
 function questionFromField(entry, pool, { promptLabel, promptValue, answerField, promptType }) {
   const correctValue = entry[answerField];
@@ -178,7 +242,9 @@ const MODES = {
     highscoreKey: 'geoquiz-highscore-karte-laender',
     unlockedKey: 'geoquiz-unlocked-difficulty-karte-laender',
     getPool(countries, difficulty) {
-      return countries.filter((c) => c.difficulty === difficulty && c.code);
+      // Micro-states are excluded here: even zoomed to their continent they
+      // stay too small to tap precisely (see mapEligible in countries.json).
+      return countries.filter((c) => c.difficulty === difficulty && c.code && c.mapEligible);
     },
     buildQuestion(entry) {
       return {
@@ -186,6 +252,7 @@ const MODES = {
         promptValue: entry.country,
         promptType: 'map-country',
         targetCode: entry.code,
+        targetContinent: entry.continent,
       };
     },
   },
@@ -197,11 +264,11 @@ const MODES = {
     getPool(countries, difficulty) {
       const cities = [];
       countries
-        .filter((c) => c.difficulty === difficulty && c.capitalCoords)
+        .filter((c) => c.difficulty === difficulty && c.capitalCoords && c.mapEligible)
         .forEach((c) => {
-          cities.push({ name: c.capital, coords: c.capitalCoords });
+          cities.push({ name: c.capital, coords: c.capitalCoords, continent: c.continent });
           if (c.largestCity !== c.capital && c.largestCityCoords) {
-            cities.push({ name: c.largestCity, coords: c.largestCityCoords });
+            cities.push({ name: c.largestCity, coords: c.largestCityCoords, continent: c.continent });
           }
         });
       return cities;
@@ -212,6 +279,7 @@ const MODES = {
         promptValue: entry.name,
         promptType: 'map-city',
         targetCoords: entry.coords,
+        targetContinent: entry.continent,
       };
     },
   },
@@ -234,11 +302,16 @@ const el = {
   difficultyButtons: Array.from(document.querySelectorAll('.difficulty-btn')),
   btnStart: document.getElementById('btn-start'),
   startMascot: document.getElementById('start-mascot'),
+  startMascotAccessory: document.getElementById('start-mascot-accessory'),
   startBubble: document.getElementById('start-bubble'),
   streakBadge: document.getElementById('streak-badge'),
+  startHeartIcons: Array.from(document.querySelectorAll('#start-hearts .heart-icon')),
+  heartsRegenHint: document.getElementById('hearts-regen-hint'),
+  skinCollection: document.getElementById('skin-collection'),
 
   quizProgress: document.getElementById('quiz-progress'),
   quizScore: document.getElementById('quiz-score'),
+  quizHeartIcons: Array.from(document.querySelectorAll('#quiz-hearts .heart-icon')),
   timerBar: document.getElementById('timer-bar'),
   timerNumber: document.getElementById('timer-number'),
   questionLabel: document.getElementById('question-label'),
@@ -246,8 +319,12 @@ const el = {
   questionFlag: document.getElementById('question-flag'),
   answerButtons: Array.from(document.querySelectorAll('.answer-btn')),
   answersGrid: document.getElementById('answers-grid'),
+  mapWrap: document.getElementById('map-wrap'),
   mapContainer: document.getElementById('map-container'),
+  mapZoomIn: document.getElementById('map-zoom-in'),
+  mapZoomOut: document.getElementById('map-zoom-out'),
   quizMascot: document.getElementById('quiz-mascot'),
+  quizMascotAccessory: document.getElementById('quiz-mascot-accessory'),
   quizBubble: document.getElementById('quiz-bubble'),
 
   resultTitle: document.getElementById('result-title'),
@@ -257,7 +334,9 @@ const el = {
   resultTotal: document.getElementById('result-total'),
   resultHighscoreMsg: document.getElementById('result-highscore-msg'),
   resultUnlockMsg: document.getElementById('result-unlock-msg'),
+  resultSkinMsg: document.getElementById('result-skin-msg'),
   resultMascot: document.getElementById('result-mascot'),
+  resultMascotAccessory: document.getElementById('result-mascot-accessory'),
   confettiLayer: document.getElementById('confetti-layer'),
   btnAgain: document.getElementById('btn-again'),
   btnHome: document.getElementById('btn-home'),
@@ -278,6 +357,22 @@ const state = {
   timerHandle: null,
   answered: false,
   mapSvg: null,
+  mapView: { x: 0, y: 0, w: MAP_WIDTH, h: MAP_HEIGHT },
+  mapBaseView: { x: 0, y: 0, w: MAP_WIDTH, h: MAP_HEIGHT },
+  mapAnimHandle: null,
+};
+
+// Transient multi-touch gesture bookkeeping for the map (pan + pinch-zoom).
+// Kept separate from `state` since it's pointer-tracking scratch data, not
+// app state that needs to persist or be inspected elsewhere.
+const mapGesture = {
+  pointers: new Map(),
+  mode: 'idle',
+  panLast: null,
+  dragDistance: 0,
+  pinchStartDist: null,
+  pinchStartView: null,
+  pinchMidSvg: null,
 };
 
 function getHighscore(modeId) {
@@ -350,6 +445,164 @@ function registerPlayedToday() {
   return { count: newCount, milestone };
 }
 
+// Hearts are a global, persistent resource (not reset per round) that slowly
+// regenerate in real time, entirely client-side, so it also works offline.
+function getHeartsState() {
+  let count = parseInt(localStorage.getItem(HEARTS_COUNT_KEY), 10);
+  if (Number.isNaN(count)) count = HEARTS_MAX;
+  let anchor = parseInt(localStorage.getItem(HEARTS_ANCHOR_KEY), 10);
+
+  if (count < HEARTS_MAX && !Number.isNaN(anchor)) {
+    const regenerated = Math.floor((Date.now() - anchor) / HEARTS_REGEN_INTERVAL_MS);
+    if (regenerated > 0) {
+      count = Math.min(HEARTS_MAX, count + regenerated);
+      localStorage.setItem(HEARTS_COUNT_KEY, String(count));
+      if (count >= HEARTS_MAX) {
+        localStorage.removeItem(HEARTS_ANCHOR_KEY);
+        anchor = NaN;
+      } else {
+        anchor += regenerated * HEARTS_REGEN_INTERVAL_MS;
+        localStorage.setItem(HEARTS_ANCHOR_KEY, String(anchor));
+      }
+    }
+  }
+
+  const msUntilNext = count < HEARTS_MAX && !Number.isNaN(anchor)
+    ? Math.max(0, HEARTS_REGEN_INTERVAL_MS - (Date.now() - anchor))
+    : null;
+  return { count, msUntilNext };
+}
+
+function loseHeart() {
+  const { count } = getHeartsState();
+  if (count <= 0) return 0;
+  const newCount = count - 1;
+  localStorage.setItem(HEARTS_COUNT_KEY, String(newCount));
+  if (count === HEARTS_MAX) {
+    localStorage.setItem(HEARTS_ANCHOR_KEY, String(Date.now()));
+  }
+  return newCount;
+}
+
+function paintHearts(icons, count) {
+  icons.forEach((icon, i) => icon.classList.toggle('lost', i >= count));
+}
+
+function renderHearts() {
+  const { count, msUntilNext } = getHeartsState();
+  paintHearts(el.quizHeartIcons, count);
+  paintHearts(el.startHeartIcons, count);
+  const showHint = count < HEARTS_MAX && msUntilNext != null;
+  el.heartsRegenHint.classList.toggle('hidden', !showHint);
+  if (showHint) {
+    const minutes = Math.max(1, Math.ceil(msUntilNext / 60000));
+    el.heartsRegenHint.textContent = `Nächstes Herz in ${minutes} Min.`;
+  }
+  return count;
+}
+
+function getLifetimeStats() {
+  return {
+    roundsPlayed: parseInt(localStorage.getItem(ROUNDS_PLAYED_KEY), 10) || 0,
+    lifetimeScore: parseInt(localStorage.getItem(LIFETIME_SCORE_KEY), 10) || 0,
+    bestStreak: parseInt(localStorage.getItem(BEST_STREAK_KEY), 10) || 0,
+  };
+}
+
+function recordRoundStats(scoreEarned, currentStreakCount) {
+  const stats = getLifetimeStats();
+  const roundsPlayed = stats.roundsPlayed + 1;
+  const lifetimeScore = stats.lifetimeScore + scoreEarned;
+  const bestStreak = Math.max(stats.bestStreak, currentStreakCount);
+  localStorage.setItem(ROUNDS_PLAYED_KEY, String(roundsPlayed));
+  localStorage.setItem(LIFETIME_SCORE_KEY, String(lifetimeScore));
+  localStorage.setItem(BEST_STREAK_KEY, String(bestStreak));
+  return { roundsPlayed, lifetimeScore, bestStreak };
+}
+
+function getUnlockedSkinIds() {
+  const stats = getLifetimeStats();
+  return SKIN_ORDER.filter((id) => SKINS[id].isUnlocked(stats));
+}
+
+function getActiveSkin() {
+  const stored = localStorage.getItem(ACTIVE_SKIN_KEY);
+  return stored && getUnlockedSkinIds().includes(stored) ? stored : 'none';
+}
+
+function setActiveSkin(skinId) {
+  localStorage.setItem(ACTIVE_SKIN_KEY, skinId);
+}
+
+function applySkinToMascot(accessoryEl) {
+  const skin = SKINS[getActiveSkin()];
+  if (skin.accessory) {
+    accessoryEl.src = `assets/mascot/accessories/${skin.accessory}.svg`;
+    accessoryEl.classList.remove('hidden');
+  } else {
+    accessoryEl.classList.add('hidden');
+  }
+}
+
+function renderSkinCollection() {
+  const stats = getLifetimeStats();
+  const activeSkin = getActiveSkin();
+  el.skinCollection.innerHTML = '';
+
+  SKIN_ORDER.forEach((id) => {
+    const skin = SKINS[id];
+    const unlocked = skin.isUnlocked(stats);
+
+    const tile = document.createElement('button');
+    tile.type = 'button';
+    tile.className = ['skin-tile', unlocked ? '' : 'locked', activeSkin === id ? 'selected' : '']
+      .filter(Boolean)
+      .join(' ');
+    tile.dataset.skin = id;
+
+    const thumb = document.createElement('div');
+    thumb.className = 'skin-thumb';
+    const base = document.createElement('img');
+    base.src = MASCOT_SRC.idle;
+    base.alt = '';
+    thumb.appendChild(base);
+    if (skin.accessory) {
+      const accessoryImg = document.createElement('img');
+      accessoryImg.src = `assets/mascot/accessories/${skin.accessory}.svg`;
+      accessoryImg.alt = '';
+      thumb.appendChild(accessoryImg);
+    }
+    if (!unlocked) {
+      const lock = document.createElement('span');
+      lock.className = 'skin-lock';
+      lock.textContent = '🔒';
+      thumb.appendChild(lock);
+    }
+    tile.appendChild(thumb);
+
+    const name = document.createElement('span');
+    name.className = 'skin-name';
+    name.textContent = skin.label;
+    tile.appendChild(name);
+
+    if (!unlocked) {
+      const hint = document.createElement('span');
+      hint.className = 'skin-hint';
+      hint.textContent = skin.hint;
+      tile.appendChild(hint);
+    }
+
+    tile.addEventListener('click', () => {
+      if (!unlocked) return;
+      setActiveSkin(id);
+      applySkinToMascot(el.startMascotAccessory);
+      renderSkinCollection();
+    });
+
+    el.skinCollection.appendChild(tile);
+  });
+}
+
 function pickGreeting() {
   const hour = new Date().getHours();
   const bucket = hour < 11 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
@@ -417,6 +670,8 @@ function renderStartScreen() {
   });
 
   renderStreakBadge();
+  renderHearts();
+  renderSkinCollection();
 }
 
 function renderStreakBadge() {
@@ -428,6 +683,7 @@ function renderStreakBadge() {
 function refreshStartMascot() {
   el.startMascot.src = MASCOT_SRC.idle;
   el.startBubble.textContent = pickGreeting();
+  applySkinToMascot(el.startMascotAccessory);
 }
 
 el.modeButtons.forEach((btn) => {
@@ -494,6 +750,7 @@ function showQuestion() {
   el.quizProgress.textContent = `${MODES[state.roundMode].label} · Frage ${state.currentIndex + 1} von ${state.questions.length}`;
   el.quizScore.textContent = state.score;
   el.questionLabel.textContent = question.promptLabel;
+  renderHearts();
 
   const isImagePrompt = question.promptType === 'image';
   const isMapPrompt = question.promptType === 'map-country' || question.promptType === 'map-city';
@@ -506,9 +763,14 @@ function showQuestion() {
   }
 
   el.answersGrid.classList.toggle('hidden', isMapPrompt);
-  el.mapContainer.classList.toggle('hidden', !isMapPrompt);
+  el.mapWrap.classList.toggle('hidden', !isMapPrompt);
   if (isMapPrompt) {
     clearMapHighlights();
+    mapGesture.pointers.clear();
+    mapGesture.mode = 'idle';
+    const baseView = getContinentView(question.targetContinent);
+    state.mapBaseView = baseView;
+    setMapView(baseView, { animate: true });
   } else {
     el.answerButtons.forEach((btn, i) => {
       btn.textContent = question.options[i];
@@ -522,6 +784,7 @@ function showQuestion() {
   el.quizMascot.classList.remove('mascot-bounce', 'mascot-sway');
   el.quizMascot.classList.add('mascot-float');
   el.quizBubble.classList.add('hidden');
+  applySkinToMascot(el.quizMascotAccessory);
 
   startTimer(TIME_LIMITS[state.roundDifficulty]);
 }
@@ -578,10 +841,15 @@ function handleAnswer(selectedIndex) {
 }
 
 function finishAnswer(isCorrect) {
+  let heartsDepleted = false;
   if (isCorrect) {
     state.score += POINTS_PER_CORRECT[state.roundDifficulty];
     state.correctCount += 1;
     el.quizScore.textContent = state.score;
+  } else {
+    const heartsLeft = loseHeart();
+    renderHearts();
+    heartsDepleted = heartsLeft <= 0;
   }
 
   const reactionPose = isCorrect ? 'happy' : 'comfort';
@@ -591,11 +859,13 @@ function finishAnswer(isCorrect) {
   el.quizBubble.classList.remove('hidden');
 
   setTimeout(() => {
-    if (state.currentIndex + 1 < state.questions.length) {
+    if (heartsDepleted) {
+      endRound({ heartsDepleted: true });
+    } else if (state.currentIndex + 1 < state.questions.length) {
       state.currentIndex += 1;
       showQuestion();
     } else {
-      endRound();
+      endRound({});
     }
   }, ANSWER_FEEDBACK_DELAY);
 }
@@ -606,11 +876,174 @@ function loadMap() {
     .then((svgText) => {
       el.mapContainer.innerHTML = svgText;
       state.mapSvg = el.mapContainer.querySelector('svg');
-      el.mapContainer.addEventListener('click', handleMapClick);
+      setMapView(state.mapView);
+      el.mapContainer.addEventListener('pointerdown', mapPointerDown);
+      el.mapContainer.addEventListener('pointermove', mapPointerMove);
+      el.mapContainer.addEventListener('pointerup', mapPointerUp);
+      el.mapContainer.addEventListener('pointercancel', mapPointerUp);
+      el.mapZoomIn.addEventListener('click', () => zoomMapBy(MAP_ZOOM_STEP));
+      el.mapZoomOut.addEventListener('click', () => zoomMapBy(1 / MAP_ZOOM_STEP));
     });
 }
 
-function handleMapClick(evt) {
+function projectLonLat(lat, lon) {
+  return [(lon + 180) / 360 * MAP_WIDTH, (90 - lat) / 180 * MAP_HEIGHT];
+}
+
+function clampMapView({ x, y, w, h }) {
+  const clampedW = Math.min(w, MAP_WIDTH);
+  const clampedH = Math.min(h, MAP_HEIGHT);
+  const clampedX = Math.max(0, Math.min(x, MAP_WIDTH - clampedW));
+  const clampedY = Math.max(0, Math.min(y, MAP_HEIGHT - clampedH));
+  return { x: clampedX, y: clampedY, w: clampedW, h: clampedH };
+}
+
+function getContinentView(continent) {
+  const region = CONTINENT_REGIONS[continent];
+  if (!region) return { x: 0, y: 0, w: MAP_WIDTH, h: MAP_HEIGHT };
+  const [x0, y0] = projectLonLat(region.latMax, region.lonMin);
+  const [x1, y1] = projectLonLat(region.latMin, region.lonMax);
+  let w = (x1 - x0) * (1 + MAP_ZOOM_PADDING * 2);
+  let h = (y1 - y0) * (1 + MAP_ZOOM_PADDING * 2);
+  const cx = (x0 + x1) / 2;
+  const cy = (y0 + y1) / 2;
+
+  // Force the map's fixed 2:1 aspect ratio so the zoomed view always fills
+  // the container edge-to-edge instead of getting letterboxed by the SVG's
+  // default preserveAspectRatio behavior.
+  const aspect = MAP_WIDTH / MAP_HEIGHT;
+  if (w / h > aspect) {
+    h = w / aspect;
+  } else {
+    w = h * aspect;
+  }
+
+  return clampMapView({ x: cx - w / 2, y: cy - h / 2, w, h });
+}
+
+function setMapView(view, { animate = false } = {}) {
+  const clamped = clampMapView(view);
+  if (!state.mapSvg) {
+    state.mapView = clamped;
+    return;
+  }
+  if (!animate) {
+    cancelAnimationFrame(state.mapAnimHandle);
+    state.mapView = clamped;
+    state.mapSvg.setAttribute('viewBox', `${clamped.x} ${clamped.y} ${clamped.w} ${clamped.h}`);
+    return;
+  }
+  const from = { ...state.mapView };
+  const start = performance.now();
+  cancelAnimationFrame(state.mapAnimHandle);
+  const step = (now) => {
+    const t = Math.min(1, (now - start) / MAP_ZOOM_ANIM_MS);
+    const eased = 1 - Math.pow(1 - t, 3);
+    const current = {
+      x: from.x + (clamped.x - from.x) * eased,
+      y: from.y + (clamped.y - from.y) * eased,
+      w: from.w + (clamped.w - from.w) * eased,
+      h: from.h + (clamped.h - from.h) * eased,
+    };
+    state.mapSvg.setAttribute('viewBox', `${current.x} ${current.y} ${current.w} ${current.h}`);
+    state.mapView = current;
+    if (t < 1) {
+      state.mapAnimHandle = requestAnimationFrame(step);
+    } else {
+      state.mapView = clamped;
+    }
+  };
+  state.mapAnimHandle = requestAnimationFrame(step);
+}
+
+function zoomMapBy(factor, centerSvgPoint) {
+  const view = state.mapView;
+  const cx = centerSvgPoint ? centerSvgPoint.x : view.x + view.w / 2;
+  const cy = centerSvgPoint ? centerSvgPoint.y : view.y + view.h / 2;
+  const newW = Math.max(MAP_MIN_ZOOM_WIDTH, Math.min(MAP_WIDTH, view.w / factor));
+  const newH = newW / 2;
+  const newX = cx - (cx - view.x) * (newW / view.w);
+  const newY = cy - (cy - view.y) * (newH / view.h);
+  setMapView({ x: newX, y: newY, w: newW, h: newH });
+}
+
+function panMapByScreenDelta(dxScreen, dyScreen) {
+  if (!state.mapSvg) return;
+  const ctm = state.mapSvg.getScreenCTM();
+  const view = state.mapView;
+  setMapView({ x: view.x - dxScreen / ctm.a, y: view.y - dyScreen / ctm.d, w: view.w, h: view.h });
+}
+
+function mapPointerDown(evt) {
+  el.mapContainer.setPointerCapture(evt.pointerId);
+  mapGesture.pointers.set(evt.pointerId, { x: evt.clientX, y: evt.clientY });
+
+  if (mapGesture.pointers.size === 1) {
+    mapGesture.mode = 'pan';
+    mapGesture.panLast = { x: evt.clientX, y: evt.clientY };
+    mapGesture.dragDistance = 0;
+  } else if (mapGesture.pointers.size === 2) {
+    mapGesture.mode = 'pinch';
+    const pts = Array.from(mapGesture.pointers.values());
+    mapGesture.pinchStartDist = Math.max(1, Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y));
+    mapGesture.pinchStartView = { ...state.mapView };
+    const midClient = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 };
+    const ctm = state.mapSvg.getScreenCTM();
+    const pt = state.mapSvg.createSVGPoint();
+    pt.x = midClient.x;
+    pt.y = midClient.y;
+    mapGesture.pinchMidSvg = pt.matrixTransform(ctm.inverse());
+  }
+}
+
+function mapPointerMove(evt) {
+  if (!mapGesture.pointers.has(evt.pointerId)) return;
+  mapGesture.pointers.set(evt.pointerId, { x: evt.clientX, y: evt.clientY });
+
+  if (mapGesture.mode === 'pan' && mapGesture.panLast) {
+    const dx = evt.clientX - mapGesture.panLast.x;
+    const dy = evt.clientY - mapGesture.panLast.y;
+    mapGesture.dragDistance += Math.hypot(dx, dy);
+    panMapByScreenDelta(dx, dy);
+    mapGesture.panLast = { x: evt.clientX, y: evt.clientY };
+  } else if (mapGesture.mode === 'pinch') {
+    const pts = Array.from(mapGesture.pointers.values());
+    if (pts.length < 2) return;
+    const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+    const scale = dist / mapGesture.pinchStartDist;
+    const startView = mapGesture.pinchStartView;
+    const newW = Math.max(MAP_MIN_ZOOM_WIDTH, Math.min(MAP_WIDTH, startView.w / scale));
+    const newH = newW / 2;
+    const mid = mapGesture.pinchMidSvg;
+    const fracX = (mid.x - startView.x) / startView.w;
+    const fracY = (mid.y - startView.y) / startView.h;
+    setMapView({ x: mid.x - fracX * newW, y: mid.y - fracY * newH, w: newW, h: newH });
+  }
+}
+
+function mapPointerUp(evt) {
+  const wasTap = mapGesture.mode === 'pan' && mapGesture.dragDistance < MAP_TAP_THRESHOLD_PX;
+  const tapPoint = wasTap ? mapGesture.pointers.get(evt.pointerId) : null;
+  mapGesture.pointers.delete(evt.pointerId);
+
+  if (tapPoint) {
+    resolveMapTap(tapPoint.x, tapPoint.y);
+  }
+
+  if (mapGesture.pointers.size === 0) {
+    mapGesture.mode = 'idle';
+  } else if (mapGesture.pointers.size === 1) {
+    // Dropped from pinch back to a single finger: resume as a pan gesture,
+    // but mark it as already "dragged" so lifting that finger won't
+    // accidentally register as a tap-to-answer.
+    const [remaining] = mapGesture.pointers.values();
+    mapGesture.mode = 'pan';
+    mapGesture.panLast = { ...remaining };
+    mapGesture.dragDistance = MAP_TAP_THRESHOLD_PX;
+  }
+}
+
+function resolveMapTap(clientX, clientY) {
   if (state.answered) return;
   const question = state.questions[state.currentIndex];
   if (!question || (question.promptType !== 'map-country' && question.promptType !== 'map-city')) return;
@@ -618,14 +1051,16 @@ function handleMapClick(evt) {
   const svg = state.mapSvg;
   const ctm = svg.getScreenCTM();
   const pt = svg.createSVGPoint();
-  pt.x = evt.clientX;
-  pt.y = evt.clientY;
+  pt.x = clientX;
+  pt.y = clientY;
   const point = pt.matrixTransform(ctm.inverse());
+  const targetEl = document.elementFromPoint(clientX, clientY);
+  const fakeEvt = { clientX, clientY, target: targetEl };
 
   if (question.promptType === 'map-country') {
-    resolveMapCountryClick(evt.target, point, evt, ctm, question);
+    resolveMapCountryClick(targetEl, point, fakeEvt, ctm, question);
   } else {
-    resolveMapCityClick(point, evt, ctm, question);
+    resolveMapCityClick(point, fakeEvt, ctm, question);
   }
 }
 
@@ -720,9 +1155,9 @@ function clearMapHighlights() {
   state.mapSvg.querySelectorAll('[data-map-marker]').forEach((node) => node.remove());
 }
 
-function endRound() {
-  const total = state.questions.length;
-  const accuracy = total > 0 ? state.correctCount / total : 0;
+function endRound({ heartsDepleted = false } = {}) {
+  const attempted = Math.min(state.currentIndex + 1, state.questions.length);
+  const accuracy = attempted > 0 ? state.correctCount / attempted : 0;
 
   const previousHighscore = getHighscore(state.roundMode);
   const isNewHighscore = state.score > previousHighscore;
@@ -740,31 +1175,39 @@ function endRound() {
     unlockedNextStage = true;
   }
 
-  const { milestone } = registerPlayedToday();
+  const previousUnlockedSkins = getUnlockedSkinIds();
+  const { milestone, count: newStreakCount } = registerPlayedToday();
+  recordRoundStats(state.score, newStreakCount);
+  const newlyUnlockedSkin = getUnlockedSkinIds().find((id) => !previousUnlockedSkins.includes(id));
 
-  renderResult({ isNewHighscore, unlockedNextStage, milestone });
+  renderResult({ isNewHighscore, unlockedNextStage, milestone, heartsDepleted, attempted, newlyUnlockedSkin });
   showScreen('result');
 }
 
 const RESULT_TIER_POSE = { excellent: 'excited', good: 'happy', practice: 'comfort' };
 
-function renderResult({ isNewHighscore, unlockedNextStage, milestone }) {
+function renderResult({ isNewHighscore, unlockedNextStage, milestone, heartsDepleted, attempted, newlyUnlockedSkin }) {
   el.resultModeLabel.textContent = `Modus: ${MODES[state.roundMode].label}`;
   el.resultScore.textContent = state.score;
   el.resultCorrect.textContent = state.correctCount;
-  el.resultTotal.textContent = state.questions.length;
+  el.resultTotal.textContent = attempted;
 
-  const accuracy = state.correctCount / state.questions.length;
+  const accuracy = attempted > 0 ? state.correctCount / attempted : 0;
   const tier = getResultTier(accuracy);
-  const pose = milestone ? 'excited' : RESULT_TIER_POSE[tier];
+  const pose = milestone ? 'excited' : heartsDepleted ? 'comfort' : RESULT_TIER_POSE[tier];
   el.resultMascot.src = MASCOT_SRC[pose];
   el.resultMascot.classList.remove('mascot-pop');
   void el.resultMascot.offsetWidth;
   el.resultMascot.classList.add('mascot-pop');
+  applySkinToMascot(el.resultMascotAccessory);
 
-  el.resultTitle.textContent = milestone
-    ? `🎉 ${milestone} Tage in Folge! Du bist ein Streak-Champion!`
-    : pickRandom(RESULT_MESSAGES[tier]);
+  if (milestone) {
+    el.resultTitle.textContent = `🎉 ${milestone} Tage in Folge! Du bist ein Streak-Champion!`;
+  } else if (heartsDepleted) {
+    el.resultTitle.textContent = pickRandom(HEARTS_DEPLETED_MESSAGES);
+  } else {
+    el.resultTitle.textContent = pickRandom(RESULT_MESSAGES[tier]);
+  }
 
   el.resultHighscoreMsg.classList.toggle('hidden', !isNewHighscore);
   el.resultUnlockMsg.classList.toggle('hidden', !unlockedNextStage);
@@ -773,7 +1216,12 @@ function renderResult({ isNewHighscore, unlockedNextStage, milestone }) {
     el.resultUnlockMsg.textContent = `🔓 Stufe "${DIFFICULTY_LABELS[nextDifficulty]}" freigeschaltet!`;
   }
 
-  if (milestone) {
+  el.resultSkinMsg.classList.toggle('hidden', !newlyUnlockedSkin);
+  if (newlyUnlockedSkin) {
+    el.resultSkinMsg.textContent = `🎁 Neuer Koala-Skin freigeschaltet: ${SKINS[newlyUnlockedSkin].label}!`;
+  }
+
+  if (milestone || newlyUnlockedSkin) {
     launchConfetti(el.confettiLayer);
   }
 }

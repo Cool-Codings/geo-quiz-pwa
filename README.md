@@ -48,17 +48,23 @@ Weltkarten-SVG (Equirectangular-Projektion, 60 einzeln anklickbare Länder-Pfade
 mit `id="<ISO-3166-1-alpha-2-Code>"`) ohne jegliche Beschriftung — komplett
 lokal, kein externer Kartendienst.
 
-- **Länder finden**: Klick muss den Pfad des gefragten Landes treffen. Sehr
-  kleine Länder (z. B. Liechtenstein) bekommen zusätzlich einen
-  Toleranz-Radius um ihren Mittelpunkt, damit sie auf dem Handy zuverlässig
-  antippbar bleiben.
+- **Länder finden**: Klick muss den Pfad des gefragten Landes treffen.
 - **Städte finden**: Hauptstädte und größte Städte aus `countries.json`
   (`capitalCoords`/`largestCityCoords`) werden auf die Karte projiziert; ein
   Klick zählt als richtig, wenn er innerhalb eines Toleranz-Radius um die
   echten Koordinaten liegt.
-- Der Toleranz-Radius wird in Bildschirm-Pixeln (nicht in SVG-Koordinaten)
-  berechnet, damit er unabhängig von der tatsächlichen Kartengröße immer
-  komfortabel antippbar bleibt (statt echtem Pinch-Zoom — siehe Hinweis unten).
+- **Kontinent-Zoom**: Beim Start jeder Karten-Frage zoomt/zentriert die Karte
+  automatisch auf den Kontinent der gesuchten Antwort (`continent`-Feld in
+  `countries.json`), damit Länder größer und leichter anklickbar sind.
+- **Nur mittelgroße/große Länder**: Mikrostaaten (z. B. Liechtenstein) sind
+  über ein aus der echten Kartenfläche berechnetes `mapEligible`-Feld aus dem
+  Karten-Modus ausgeschlossen (bleiben in den anderen Modi weiterhin nutzbar).
+  Für alle verbleibenden Länder sorgt zusätzlich ein bildschirmpixel-basierter
+  Toleranz-Radius um den Mittelpunkt dafür, dass auch kleinere Formen
+  zuverlässig antippbar bleiben.
+- **Zoom/Pan**: Zwei-Finger-Pinch-Zoom auf Touch-Geräten, +/- Buttons für die
+  Maus-Bedienung, sowie Verschieben (Pan) bei vergrößerter Ansicht — mit
+  Tap-/Drag-Unterscheidung, damit Verschieben keine (Fehl-)Antwort auslöst.
 - Richtige Antwort: Land/Stadt-Punkt wird kurz grün markiert. Falsche Antwort:
   die tatsächlich gemeinte Stelle wird rot markiert, der eigene Tipp als
   kleiner grauer Punkt.
@@ -68,12 +74,24 @@ lokal, kein externer Kartendienst.
 
 Die Karte wurde aus dem [world-atlas](https://github.com/topojson/world-atlas)-
 TopoJSON-Datensatz (Natural-Earth-Daten, gemeinfrei) generiert — Details und
-Lizenz in `assets/map/SOURCE.md`. Statt echtem Pinch-Zoom/Pan setzt der Modus
-bewusst auf eine großzügige, bildschirmgrößen-unabhängige Antipp-Toleranz
-(im Auftrag ausdrücklich als Alternative vorgesehen).
+Lizenz in `assets/map/SOURCE.md`.
 
-Noch nicht umgesetzt: Herzen-System, Belohnungs-Skins für den Koala,
-Mehrsprachigkeit, 2-Spieler-Modus, Kontinente-Zuordnung, Puzzle-Modus.
+**Herzen-System**: 3 Herzen, global über alle Modi hinweg in `localStorage`
+gespeichert (nicht pro Runde zurückgesetzt). Jede falsche Antwort kostet ein
+Herz; bei 0 Herzen endet die laufende Runde vorzeitig mit dem bisherigen Score
+und einer tröstenden Koala-Reaktion. Herzen regenerieren sich zeitgesteuert
+(1 Herz alle 30 Minuten, per Zeitstempel-Anker berechnet) — funktioniert auch
+offline, da rein clientseitig.
+
+**Koala-Sammlung**: 4 freischaltbare Skins (Hut, Sonnenbrille, Schal, Krone)
+als Overlay-SVGs (`assets/mascot/accessories/`), die über allen vier
+Koala-Posen sitzen. Freischaltung anhand persistenter Lifetime-Statistiken
+(gespielte Runden, Gesamtpunktzahl über alle Modi, bester je erreichter
+Streak). Auf dem Start-Bildschirm wählbar; gesperrte Skins erscheinen
+ausgegraut mit Schloss-Symbol und Freischalt-Hinweis.
+
+Noch nicht umgesetzt: Mehrsprachigkeit, 2-Spieler-Modus, Kontinente-Zuordnung-
+Modus, Puzzle-Modus.
 
 ## Lokal starten
 
@@ -93,12 +111,13 @@ Danach im Browser `http://localhost:8080` (bzw. den entsprechenden Port) öffnen
 ```
 index.html          Grundgerüst mit Start-, Quiz- und Ergebnis-Bildschirm
 css/style.css        Kindgerechtes, buntes Design
-js/app.js             Spiellogik (Fragen, Timer, Scoring, Fortschritt, Maskottchen, Streak, Karte)
-data/countries.json   Länder, Hauptstädte, größte Städte, Flüsse, Koordinaten, Ländercodes je Schwierigkeitsstufe
+js/app.js             Spiellogik (Fragen, Timer, Scoring, Fortschritt, Maskottchen, Streak, Karte, Herzen, Skins)
+data/countries.json   Länder, Hauptstädte, größte Städte, Flüsse, Koordinaten, Kontinent, Flächenfilter je Land
 manifest.json         PWA-Manifest
-sw.js                 Service Worker (Offline-Caching, inkl. Flaggen, Maskottchen und Weltkarte)
+sw.js                 Service Worker (Offline-Caching, inkl. Flaggen, Maskottchen, Accessoires und Weltkarte)
 icons/                App-Icons (SVG)
 assets/flags/          Flaggen-SVGs (flag-icons, MIT-Lizenz)
 assets/mascot/          Koala-Maskottchen in 4 Posen (SVG, eigene Illustration)
+assets/mascot/accessories/  Freischaltbare Skin-Overlays (Hut, Sonnenbrille, Schal, Krone)
 assets/map/             Weltkarten-SVG (world-atlas/Natural-Earth-Daten, ISC/gemeinfrei)
 ```

@@ -20,10 +20,23 @@
         <div class="mascot-area">
           <div class="streak-badge hidden" id="streak-badge">🔥 <span id="streak-count">0</span> Tage in Folge!</div>
           <div class="speech-bubble" id="start-bubble">Hallo! Schön, dass du da bist!</div>
-          <img class="mascot-img mascot-float" id="start-mascot" src="assets/mascot/koala-idle.svg" alt="Koala-Maskottchen" width="140" height="140" />
+          <div class="mascot-stack">
+            <img class="mascot-img mascot-float" id="start-mascot" src="assets/mascot/koala-idle.svg" alt="Koala-Maskottchen" width="140" height="140" />
+            <img class="mascot-accessory hidden" id="start-mascot-accessory" alt="" width="140" height="140" />
+          </div>
         </div>
         <h1>Geo-Quiz</h1>
         <p class="subtitle">Wie gut kennst du dich auf der Welt aus?</p>
+
+        <div class="hearts-badge" id="start-hearts">
+          <span class="heart-icon" data-heart="0">❤️</span>
+          <span class="heart-icon" data-heart="1">❤️</span>
+          <span class="heart-icon" data-heart="2">❤️</span>
+          <span class="hearts-regen-hint hidden" id="hearts-regen-hint"></span>
+        </div>
+
+        <h2 class="mode-title">🎨 Deine Koala-Sammlung:</h2>
+        <div class="skin-collection" id="skin-collection"></div>
 
         <h2 class="mode-title">Wähle einen Modus:</h2>
         <div class="mode-list" id="mode-list">
@@ -89,13 +102,22 @@
         <div class="quiz-score">⭐ <span id="quiz-score">0</span></div>
       </div>
 
+      <div class="quiz-hearts" id="quiz-hearts">
+        <span class="heart-icon" data-heart="0">❤️</span>
+        <span class="heart-icon" data-heart="1">❤️</span>
+        <span class="heart-icon" data-heart="2">❤️</span>
+      </div>
+
       <div class="timer-wrap">
         <div class="timer-bar" id="timer-bar"></div>
       </div>
       <div class="timer-number" id="timer-number">15</div>
 
       <div class="quiz-mascot-row">
-        <img class="mascot-img mascot-float" id="quiz-mascot" src="assets/mascot/koala-idle.svg" alt="Koala-Maskottchen" width="72" height="72" />
+        <div class="mascot-stack">
+          <img class="mascot-img mascot-float" id="quiz-mascot" src="assets/mascot/koala-idle.svg" alt="Koala-Maskottchen" width="72" height="72" />
+          <img class="mascot-accessory hidden" id="quiz-mascot-accessory" alt="" width="72" height="72" />
+        </div>
         <div class="speech-bubble speech-bubble-quiz hidden" id="quiz-bubble"></div>
       </div>
 
@@ -111,7 +133,13 @@
           <button class="answer-btn" data-index="3"></button>
         </div>
 
-        <div class="map-container hidden" id="map-container"></div>
+        <div class="map-wrap hidden" id="map-wrap">
+          <div class="map-container" id="map-container"></div>
+          <div class="map-zoom-controls">
+            <button class="map-zoom-btn" id="map-zoom-in" aria-label="Karte vergrößern" type="button">+</button>
+            <button class="map-zoom-btn" id="map-zoom-out" aria-label="Karte verkleinern" type="button">−</button>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -119,7 +147,10 @@
     <section id="screen-result" class="screen hidden">
       <div class="card">
         <div class="result-mascot-wrap" id="result-mascot-wrap">
-          <img class="mascot-img" id="result-mascot" src="assets/mascot/koala-happy.svg" alt="Koala-Maskottchen" width="140" height="140" />
+          <div class="mascot-stack">
+            <img class="mascot-img" id="result-mascot" src="assets/mascot/koala-happy.svg" alt="Koala-Maskottchen" width="140" height="140" />
+            <img class="mascot-accessory hidden" id="result-mascot-accessory" alt="" width="140" height="140" />
+          </div>
           <div class="confetti-layer" id="confetti-layer"></div>
         </div>
         <h1 id="result-title">Super gemacht!</h1>
@@ -132,6 +163,7 @@
 
         <p id="result-highscore-msg" class="highscore-msg hidden">🏆 Neuer Highscore!</p>
         <p id="result-unlock-msg" class="unlock-msg hidden">🔓 Nächste Stufe freigeschaltet!</p>
+        <p id="result-skin-msg" class="unlock-msg hidden">🎁 Neuer Koala-Skin freigeschaltet!</p>
 
         <div class="result-buttons">
           <button id="btn-again" class="btn-primary">🔁 Nochmal spielen</button>

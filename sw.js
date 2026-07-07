@@ -1,4 +1,4 @@
-const CACHE_NAME = 'geo-quiz-cache-v5';
+const CACHE_NAME = 'geo-quiz-cache-v6';
 const APP_SHELL = [
   './',
   './index.html',
@@ -12,6 +12,10 @@ const APP_SHELL = [
   './assets/mascot/koala-happy.svg',
   './assets/mascot/koala-comfort.svg',
   './assets/mascot/koala-excited.svg',
+  './assets/mascot/accessories/hat.svg',
+  './assets/mascot/accessories/scarf.svg',
+  './assets/mascot/accessories/sunglasses.svg',
+  './assets/mascot/accessories/crown.svg',
   './assets/map/world-map.svg',
 ];
 
