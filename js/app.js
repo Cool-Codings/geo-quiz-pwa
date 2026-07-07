@@ -6,9 +6,91 @@ const QUESTIONS_PER_ROUND = 10;
 const UNLOCK_THRESHOLD = 0.7;
 const ANSWER_FEEDBACK_DELAY = 1200;
 
-const STORAGE_KEYS = {
-  highscore: 'geoquiz-highscore',
-  unlockedIndex: 'geoquiz-unlocked-difficulty-index',
+function questionFromField(entry, pool, { promptLabel, promptValue, answerField }) {
+  const correctValue = entry[answerField];
+  const distractorPool = pool.filter((c) => c[answerField] !== correctValue);
+  const distractors = shuffle(distractorPool).slice(0, 3).map((c) => c[answerField]);
+  const options = shuffle([correctValue, ...distractors]);
+  return {
+    promptLabel,
+    promptValue,
+    options,
+    correctIndex: options.indexOf(correctValue),
+  };
+}
+
+const MODES = {
+  hauptstaedte: {
+    id: 'hauptstaedte',
+    label: 'Hauptstädte',
+    highscoreKey: 'geoquiz-highscore-hauptstaedte',
+    unlockedKey: 'geoquiz-unlocked-difficulty-hauptstaedte',
+    getPool(countries, difficulty) {
+      return countries.filter((c) => c.difficulty === difficulty);
+    },
+    buildQuestion(entry, pool) {
+      return questionFromField(entry, pool, {
+        promptLabel: 'Wie heißt die Hauptstadt von...?',
+        promptValue: entry.country,
+        answerField: 'capital',
+      });
+    },
+  },
+  laender: {
+    id: 'laender',
+    label: 'Länder',
+    highscoreKey: 'geoquiz-highscore-laender',
+    unlockedKey: 'geoquiz-unlocked-difficulty-laender',
+    getPool(countries, difficulty) {
+      return countries.filter((c) => c.difficulty === difficulty);
+    },
+    buildQuestion(entry, pool) {
+      if (Math.random() < 0.5) {
+        return questionFromField(entry, pool, {
+          promptLabel: 'Wie heißt die Hauptstadt von...?',
+          promptValue: entry.country,
+          answerField: 'capital',
+        });
+      }
+      return questionFromField(entry, pool, {
+        promptLabel: 'Welches Land hat diese Hauptstadt?',
+        promptValue: entry.capital,
+        answerField: 'country',
+      });
+    },
+  },
+  staedte: {
+    id: 'staedte',
+    label: 'Städte',
+    highscoreKey: 'geoquiz-highscore-staedte',
+    unlockedKey: 'geoquiz-unlocked-difficulty-staedte',
+    getPool(countries, difficulty) {
+      return countries.filter((c) => c.difficulty === difficulty && c.largestCity);
+    },
+    buildQuestion(entry, pool) {
+      return questionFromField(entry, pool, {
+        promptLabel: 'Welche ist die größte Stadt in...?',
+        promptValue: entry.country,
+        answerField: 'largestCity',
+      });
+    },
+  },
+  fluesse: {
+    id: 'fluesse',
+    label: 'Flüsse',
+    highscoreKey: 'geoquiz-highscore-fluesse',
+    unlockedKey: 'geoquiz-unlocked-difficulty-fluesse',
+    getPool(countries, difficulty) {
+      return countries.filter((c) => c.difficulty === difficulty && c.river);
+    },
+    buildQuestion(entry, pool) {
+      return questionFromField(entry, pool, {
+        promptLabel: 'Durch welches Land fließt dieser Fluss?',
+        promptValue: entry.river,
+        answerField: 'country',
+      });
+    },
+  },
 };
 
 const screens = {
@@ -18,6 +100,8 @@ const screens = {
 };
 
 const el = {
+  modeButtons: Array.from(document.querySelectorAll('.mode-btn')),
+  startModeLabel: document.getElementById('start-mode-label'),
   startHighscore: document.getElementById('start-highscore'),
   difficultyButtons: Array.from(document.querySelectorAll('.difficulty-btn')),
   btnStart: document.getElementById('btn-start'),
@@ -26,11 +110,13 @@ const el = {
   quizScore: document.getElementById('quiz-score'),
   timerBar: document.getElementById('timer-bar'),
   timerNumber: document.getElementById('timer-number'),
-  questionCountry: document.getElementById('question-country'),
+  questionLabel: document.getElementById('question-label'),
+  questionSubject: document.getElementById('question-subject'),
   answerButtons: Array.from(document.querySelectorAll('.answer-btn')),
 
   resultEmoji: document.getElementById('result-emoji'),
   resultTitle: document.getElementById('result-title'),
+  resultModeLabel: document.getElementById('result-mode-label'),
   resultScore: document.getElementById('result-score'),
   resultCorrect: document.getElementById('result-correct'),
   resultTotal: document.getElementById('result-total'),
@@ -42,7 +128,9 @@ const el = {
 
 const state = {
   allCountries: [],
+  selectedMode: 'hauptstaedte',
   selectedDifficulty: 'leicht',
+  roundMode: 'hauptstaedte',
   roundDifficulty: 'leicht',
   questions: [],
   currentIndex: 0,
@@ -53,20 +141,20 @@ const state = {
   answered: false,
 };
 
-function getHighscore() {
-  return parseInt(localStorage.getItem(STORAGE_KEYS.highscore), 10) || 0;
+function getHighscore(modeId) {
+  return parseInt(localStorage.getItem(MODES[modeId].highscoreKey), 10) || 0;
 }
 
-function setHighscore(value) {
-  localStorage.setItem(STORAGE_KEYS.highscore, String(value));
+function setHighscore(modeId, value) {
+  localStorage.setItem(MODES[modeId].highscoreKey, String(value));
 }
 
-function getUnlockedIndex() {
-  return parseInt(localStorage.getItem(STORAGE_KEYS.unlockedIndex), 10) || 0;
+function getUnlockedIndex(modeId) {
+  return parseInt(localStorage.getItem(MODES[modeId].unlockedKey), 10) || 0;
 }
 
-function setUnlockedIndex(index) {
-  localStorage.setItem(STORAGE_KEYS.unlockedIndex, String(index));
+function setUnlockedIndex(modeId, index) {
+  localStorage.setItem(MODES[modeId].unlockedKey, String(index));
 }
 
 function shuffle(array) {
@@ -85,9 +173,14 @@ function showScreen(name) {
 }
 
 function renderStartScreen() {
-  el.startHighscore.textContent = getHighscore();
-  const unlockedIndex = getUnlockedIndex();
+  el.modeButtons.forEach((btn) => {
+    btn.classList.toggle('selected', btn.dataset.mode === state.selectedMode);
+  });
 
+  el.startModeLabel.textContent = MODES[state.selectedMode].label;
+  el.startHighscore.textContent = getHighscore(state.selectedMode);
+
+  const unlockedIndex = getUnlockedIndex(state.selectedMode);
   el.difficultyButtons.forEach((btn) => {
     const difficulty = btn.dataset.difficulty;
     const difficultyIndex = DIFFICULTIES.indexOf(difficulty);
@@ -97,6 +190,14 @@ function renderStartScreen() {
   });
 }
 
+el.modeButtons.forEach((btn) => {
+  btn.addEventListener('click', () => {
+    state.selectedMode = btn.dataset.mode;
+    state.selectedDifficulty = 'leicht';
+    renderStartScreen();
+  });
+});
+
 el.difficultyButtons.forEach((btn) => {
   btn.addEventListener('click', () => {
     if (btn.disabled) return;
@@ -105,33 +206,24 @@ el.difficultyButtons.forEach((btn) => {
   });
 });
 
-el.btnStart.addEventListener('click', () => startRound(state.selectedDifficulty));
-el.btnAgain.addEventListener('click', () => startRound(state.roundDifficulty));
+el.btnStart.addEventListener('click', () => startRound(state.selectedMode, state.selectedDifficulty));
+el.btnAgain.addEventListener('click', () => startRound(state.roundMode, state.roundDifficulty));
 el.btnHome.addEventListener('click', () => {
   renderStartScreen();
   showScreen('start');
 });
 
-function buildQuestions(difficulty) {
-  const pool = state.allCountries.filter((c) => c.difficulty === difficulty);
+function buildQuestions(modeId, difficulty) {
+  const mode = MODES[modeId];
+  const pool = mode.getPool(state.allCountries, difficulty);
   const picked = shuffle(pool).slice(0, Math.min(QUESTIONS_PER_ROUND, pool.length));
-
-  return picked.map((correctEntry) => {
-    const distractorPool = pool.filter((c) => c.country !== correctEntry.country);
-    const distractors = shuffle(distractorPool).slice(0, 3);
-    const options = shuffle([correctEntry, ...distractors].map((c) => c.capital));
-    return {
-      country: correctEntry.country,
-      capital: correctEntry.capital,
-      options,
-      correctIndex: options.indexOf(correctEntry.capital),
-    };
-  });
+  return picked.map((entry) => mode.buildQuestion(entry, pool));
 }
 
-function startRound(difficulty) {
+function startRound(modeId, difficulty) {
+  state.roundMode = modeId;
   state.roundDifficulty = difficulty;
-  state.questions = buildQuestions(difficulty);
+  state.questions = buildQuestions(modeId, difficulty);
   state.currentIndex = 0;
   state.score = 0;
   state.correctCount = 0;
@@ -144,9 +236,10 @@ function showQuestion() {
   state.answered = false;
   const question = state.questions[state.currentIndex];
 
-  el.quizProgress.textContent = `Frage ${state.currentIndex + 1} von ${state.questions.length}`;
+  el.quizProgress.textContent = `${MODES[state.roundMode].label} · Frage ${state.currentIndex + 1} von ${state.questions.length}`;
   el.quizScore.textContent = state.score;
-  el.questionCountry.textContent = question.country;
+  el.questionLabel.textContent = question.promptLabel;
+  el.questionSubject.textContent = question.promptValue;
 
   el.answerButtons.forEach((btn, i) => {
     btn.textContent = question.options[i];
@@ -214,27 +307,28 @@ function endRound() {
   const total = state.questions.length;
   const accuracy = total > 0 ? state.correctCount / total : 0;
 
-  const previousHighscore = getHighscore();
+  const previousHighscore = getHighscore(state.roundMode);
   const isNewHighscore = state.score > previousHighscore;
-  if (isNewHighscore) setHighscore(state.score);
+  if (isNewHighscore) setHighscore(state.roundMode, state.score);
 
   let unlockedNextStage = false;
   const difficultyIndex = DIFFICULTIES.indexOf(state.roundDifficulty);
-  const unlockedIndex = getUnlockedIndex();
+  const unlockedIndex = getUnlockedIndex(state.roundMode);
   if (
     accuracy >= UNLOCK_THRESHOLD &&
     difficultyIndex === unlockedIndex &&
     difficultyIndex < DIFFICULTIES.length - 1
   ) {
-    setUnlockedIndex(difficultyIndex + 1);
+    setUnlockedIndex(state.roundMode, difficultyIndex + 1);
     unlockedNextStage = true;
   }
 
-  renderResult({ isNewHighscore, unlockedNextStage, accuracy });
+  renderResult({ isNewHighscore, unlockedNextStage });
   showScreen('result');
 }
 
 function renderResult({ isNewHighscore, unlockedNextStage }) {
+  el.resultModeLabel.textContent = `Modus: ${MODES[state.roundMode].label}`;
   el.resultScore.textContent = state.score;
   el.resultCorrect.textContent = state.correctCount;
   el.resultTotal.textContent = state.questions.length;

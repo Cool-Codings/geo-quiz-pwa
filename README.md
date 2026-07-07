@@ -4,14 +4,23 @@ Eine Lern-PWA für Kinder (7-12 Jahre) zum Üben von Ländern und Hauptstädten.
 
 ## Aktueller Stand
 
-Erster spielbarer Modus: **Hauptstädte-Quiz**
+Vier spielbare Quiz-Modi, wählbar auf dem Start-Bildschirm:
 
-- Multiple-Choice mit 4 Antwortoptionen, Distraktoren wechseln bei jedem Durchlauf
-- 3 Schwierigkeitsstufen (leicht, mittel, schwer), ca. 60 Länder weltweit
+- **Hauptstädte**: "Wie heißt die Hauptstadt von [Land]?"
+- **Länder**: mischt beide Richtungen — Land→Hauptstadt und Hauptstadt→Land
+- **Städte**: "Welche ist die größte Stadt in [Land]?" (größte Stadt ≠ Hauptstadt bei vielen Ländern, z. B. Schweiz/Zürich, Türkei/Istanbul)
+- **Flüsse**: "Durch welches Land fließt [Fluss]?" (nur für Länder mit bekanntem großen Fluss)
+
+Gemeinsame Spiellogik aller Modi:
+
+- Multiple-Choice mit 4 Antwortoptionen, Distraktoren aus derselben Schwierigkeitsstufe, wechseln bei jedem Durchlauf
+- 3 Schwierigkeitsstufen (leicht, mittel, schwer), 60 Länder weltweit
 - Zeitlimit pro Frage je nach Schwierigkeit (15 / 12 / 10 Sekunden)
-- Punktesystem mit Highscore in `localStorage`
-- Levelfortschritt: nächste Stufe wird ab 70% Trefferquote freigeschaltet
+- Punktesystem mit **pro Modus eigenem** Highscore in `localStorage`
+- Levelfortschritt: nächste Stufe wird ab 70% Trefferquote freigeschaltet — **pro Modus unabhängig**
 - PWA-Grundgerüst mit Manifest und Service Worker für Offline-Nutzung
+
+Noch nicht umgesetzt: Flaggen-Modus, Maskottchen, Mehrsprachigkeit.
 
 ## Lokal starten
 
@@ -32,7 +41,7 @@ Danach im Browser `http://localhost:8080` (bzw. den entsprechenden Port) öffnen
 index.html          Grundgerüst mit Start-, Quiz- und Ergebnis-Bildschirm
 css/style.css        Kindgerechtes, buntes Design
 js/app.js             Spiellogik (Fragen, Timer, Scoring, Fortschritt)
-data/countries.json   Länder + Hauptstädte je Schwierigkeitsstufe
+data/countries.json   Länder, Hauptstädte, größte Städte, Flüsse je Schwierigkeitsstufe
 manifest.json         PWA-Manifest
 sw.js                 Service Worker (Offline-Caching)
 icons/                App-Icons (SVG)

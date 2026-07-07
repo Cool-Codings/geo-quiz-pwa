@@ -19,10 +19,30 @@
       <div class="card">
         <div class="mascot-emoji" aria-hidden="true">🌍</div>
         <h1>Geo-Quiz</h1>
-        <p class="subtitle">Wie gut kennst du die Hauptstädte der Welt?</p>
+        <p class="subtitle">Wie gut kennst du dich auf der Welt aus?</p>
+
+        <h2 class="mode-title">Wähle einen Modus:</h2>
+        <div class="mode-list" id="mode-list">
+          <button class="mode-btn" data-mode="hauptstaedte">
+            <span class="mode-emoji">🏛️</span>
+            <span class="mode-name">Hauptstädte</span>
+          </button>
+          <button class="mode-btn" data-mode="laender">
+            <span class="mode-emoji">🗺️</span>
+            <span class="mode-name">Länder</span>
+          </button>
+          <button class="mode-btn" data-mode="staedte">
+            <span class="mode-emoji">🏙️</span>
+            <span class="mode-name">Städte</span>
+          </button>
+          <button class="mode-btn" data-mode="fluesse">
+            <span class="mode-emoji">🌊</span>
+            <span class="mode-name">Flüsse</span>
+          </button>
+        </div>
 
         <div class="highscore-box">
-          🏆 Highscore: <span id="start-highscore">0</span>
+          🏆 Highscore <span id="start-mode-label">Hauptstädte</span>: <span id="start-highscore">0</span>
         </div>
 
         <h2 class="difficulty-title">Wähle eine Stufe:</h2>
@@ -58,8 +78,8 @@
       <div class="timer-number" id="timer-number">15</div>
 
       <div class="card question-card">
-        <p class="question-label">Wie heißt die Hauptstadt von...?</p>
-        <h2 class="question-country" id="question-country">Land</h2>
+        <p class="question-label" id="question-label">Wie heißt die Hauptstadt von...?</p>
+        <h2 class="question-subject" id="question-subject">Land</h2>
 
         <div class="answers-grid" id="answers-grid">
           <button class="answer-btn" data-index="0"></button>
@@ -75,6 +95,7 @@
       <div class="card">
         <div class="mascot-emoji" id="result-emoji" aria-hidden="true">🎉</div>
         <h1 id="result-title">Super gemacht!</h1>
+        <p class="result-mode-label" id="result-mode-label">Modus: Hauptstädte</p>
 
         <div class="result-stats">
           <p class="result-score">Punkte: <span id="result-score">0</span></p>
