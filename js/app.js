@@ -65,6 +65,10 @@ const STREAK_LAST_DATE_KEY = 'geoquiz-streak-last-date';
 
 const CONFETTI_COLORS = ['#FF6B6B', '#FFD93D', '#06D6A0', '#4ECDC4', '#9B5DE5', '#4FC3F7'];
 
+const MAP_WIDTH = 960;
+const MAP_HEIGHT = 480;
+const CITY_CLICK_TOLERANCE = 22;
+
 function questionFromField(entry, pool, { promptLabel, promptValue, answerField, promptType }) {
   const correctValue = entry[answerField];
   const distractorPool = pool.filter((c) => c[answerField] !== correctValue);
@@ -168,7 +172,52 @@ const MODES = {
       });
     },
   },
+  'karte-laender': {
+    id: 'karte-laender',
+    label: 'Karte: Länder finden',
+    highscoreKey: 'geoquiz-highscore-karte-laender',
+    unlockedKey: 'geoquiz-unlocked-difficulty-karte-laender',
+    getPool(countries, difficulty) {
+      return countries.filter((c) => c.difficulty === difficulty && c.code);
+    },
+    buildQuestion(entry) {
+      return {
+        promptLabel: 'Wo liegt dieses Land?',
+        promptValue: entry.country,
+        promptType: 'map-country',
+        targetCode: entry.code,
+      };
+    },
+  },
+  'karte-staedte': {
+    id: 'karte-staedte',
+    label: 'Karte: Städte finden',
+    highscoreKey: 'geoquiz-highscore-karte-staedte',
+    unlockedKey: 'geoquiz-unlocked-difficulty-karte-staedte',
+    getPool(countries, difficulty) {
+      const cities = [];
+      countries
+        .filter((c) => c.difficulty === difficulty && c.capitalCoords)
+        .forEach((c) => {
+          cities.push({ name: c.capital, coords: c.capitalCoords });
+          if (c.largestCity !== c.capital && c.largestCityCoords) {
+            cities.push({ name: c.largestCity, coords: c.largestCityCoords });
+          }
+        });
+      return cities;
+    },
+    buildQuestion(entry) {
+      return {
+        promptLabel: 'Wo liegt diese Stadt?',
+        promptValue: entry.name,
+        promptType: 'map-city',
+        targetCoords: entry.coords,
+      };
+    },
+  },
 };
+
+const MAP_MODE_IDS = ['karte-laender', 'karte-staedte'];
 
 const screens = {
   start: document.getElementById('screen-start'),
@@ -178,6 +227,8 @@ const screens = {
 
 const el = {
   modeButtons: Array.from(document.querySelectorAll('.mode-btn')),
+  karteSubmodes: document.getElementById('karte-submodes'),
+  karteSubmodeButtons: Array.from(document.querySelectorAll('.karte-submode-btn')),
   startModeLabel: document.getElementById('start-mode-label'),
   startHighscore: document.getElementById('start-highscore'),
   difficultyButtons: Array.from(document.querySelectorAll('.difficulty-btn')),
@@ -194,6 +245,8 @@ const el = {
   questionSubject: document.getElementById('question-subject'),
   questionFlag: document.getElementById('question-flag'),
   answerButtons: Array.from(document.querySelectorAll('.answer-btn')),
+  answersGrid: document.getElementById('answers-grid'),
+  mapContainer: document.getElementById('map-container'),
   quizMascot: document.getElementById('quiz-mascot'),
   quizBubble: document.getElementById('quiz-bubble'),
 
@@ -214,6 +267,7 @@ const state = {
   allCountries: [],
   selectedMode: 'hauptstaedte',
   selectedDifficulty: 'leicht',
+  karteSubmodesOpen: false,
   roundMode: 'hauptstaedte',
   roundDifficulty: 'leicht',
   questions: [],
@@ -223,6 +277,7 @@ const state = {
   timeLeft: 0,
   timerHandle: null,
   answered: false,
+  mapSvg: null,
 };
 
 function getHighscore(modeId) {
@@ -337,7 +392,15 @@ function showScreen(name) {
 }
 
 function renderStartScreen() {
+  const isKarteMode = MAP_MODE_IDS.includes(state.selectedMode);
+
   el.modeButtons.forEach((btn) => {
+    const active = btn.dataset.mode === 'karte' ? isKarteMode : btn.dataset.mode === state.selectedMode;
+    btn.classList.toggle('selected', active);
+  });
+
+  el.karteSubmodes.classList.toggle('hidden', !(state.karteSubmodesOpen || isKarteMode));
+  el.karteSubmodeButtons.forEach((btn) => {
     btn.classList.toggle('selected', btn.dataset.mode === state.selectedMode);
   });
 
@@ -368,6 +431,20 @@ function refreshStartMascot() {
 }
 
 el.modeButtons.forEach((btn) => {
+  btn.addEventListener('click', () => {
+    if (btn.dataset.mode === 'karte') {
+      state.karteSubmodesOpen = !state.karteSubmodesOpen;
+      renderStartScreen();
+      return;
+    }
+    state.selectedMode = btn.dataset.mode;
+    state.selectedDifficulty = 'leicht';
+    state.karteSubmodesOpen = false;
+    renderStartScreen();
+  });
+});
+
+el.karteSubmodeButtons.forEach((btn) => {
   btn.addEventListener('click', () => {
     state.selectedMode = btn.dataset.mode;
     state.selectedDifficulty = 'leicht';
@@ -419,20 +496,27 @@ function showQuestion() {
   el.questionLabel.textContent = question.promptLabel;
 
   const isImagePrompt = question.promptType === 'image';
+  const isMapPrompt = question.promptType === 'map-country' || question.promptType === 'map-city';
+
   el.questionSubject.classList.toggle('hidden', isImagePrompt);
   el.questionFlag.classList.toggle('hidden', !isImagePrompt);
+  el.questionSubject.textContent = question.promptValue;
   if (isImagePrompt) {
     el.questionFlag.src = `assets/flags/${question.promptValue}.svg`;
-  } else {
-    el.questionSubject.textContent = question.promptValue;
   }
 
-  el.answerButtons.forEach((btn, i) => {
-    btn.textContent = question.options[i];
-    btn.disabled = false;
-    btn.classList.remove('correct', 'wrong');
-    btn.onclick = () => handleAnswer(i);
-  });
+  el.answersGrid.classList.toggle('hidden', isMapPrompt);
+  el.mapContainer.classList.toggle('hidden', !isMapPrompt);
+  if (isMapPrompt) {
+    clearMapHighlights();
+  } else {
+    el.answerButtons.forEach((btn, i) => {
+      btn.textContent = question.options[i];
+      btn.disabled = false;
+      btn.classList.remove('correct', 'wrong');
+      btn.onclick = () => handleAnswer(i);
+    });
+  }
 
   el.quizMascot.src = MASCOT_SRC.idle;
   el.quizMascot.classList.remove('mascot-bounce', 'mascot-sway');
@@ -452,9 +536,21 @@ function startTimer(seconds) {
     updateTimerDisplay(state.timeLeft, seconds);
     if (state.timeLeft <= 0) {
       clearInterval(state.timerHandle);
-      handleAnswer(null);
+      handleTimeout();
     }
   }, 1000);
+}
+
+function handleTimeout() {
+  if (state.answered) return;
+  const question = state.questions[state.currentIndex];
+  if (question.promptType === 'map-country' || question.promptType === 'map-city') {
+    state.answered = true;
+    highlightMapTarget(question, false);
+    finishAnswer(false);
+  } else {
+    handleAnswer(null);
+  }
 }
 
 function updateTimerDisplay(timeLeft, total) {
@@ -478,6 +574,10 @@ function handleAnswer(selectedIndex) {
     else if (i === selectedIndex) btn.classList.add('wrong');
   });
 
+  finishAnswer(isCorrect);
+}
+
+function finishAnswer(isCorrect) {
   if (isCorrect) {
     state.score += POINTS_PER_CORRECT[state.roundDifficulty];
     state.correctCount += 1;
@@ -498,6 +598,126 @@ function handleAnswer(selectedIndex) {
       endRound();
     }
   }, ANSWER_FEEDBACK_DELAY);
+}
+
+function loadMap() {
+  return fetch('assets/map/world-map.svg')
+    .then((r) => r.text())
+    .then((svgText) => {
+      el.mapContainer.innerHTML = svgText;
+      state.mapSvg = el.mapContainer.querySelector('svg');
+      el.mapContainer.addEventListener('click', handleMapClick);
+    });
+}
+
+function handleMapClick(evt) {
+  if (state.answered) return;
+  const question = state.questions[state.currentIndex];
+  if (!question || (question.promptType !== 'map-country' && question.promptType !== 'map-city')) return;
+
+  const svg = state.mapSvg;
+  const ctm = svg.getScreenCTM();
+  const pt = svg.createSVGPoint();
+  pt.x = evt.clientX;
+  pt.y = evt.clientY;
+  const point = pt.matrixTransform(ctm.inverse());
+
+  if (question.promptType === 'map-country') {
+    resolveMapCountryClick(evt.target, point, evt, ctm, question);
+  } else {
+    resolveMapCityClick(point, evt, ctm, question);
+  }
+}
+
+// Screen-space (not SVG-viewBox-space) distance check, so the tap tolerance
+// stays a comfortable, consistent size on the finger/mouse regardless of how
+// large the map happens to be rendered (small phone card vs. wide tablet).
+const MIN_TAP_TOLERANCE_PX = 20;
+
+function withinScreenTolerance(svgX, svgY, evt, ctm, svgTolerance) {
+  const targetScreenX = svgX * ctm.a + ctm.e;
+  const targetScreenY = svgY * ctm.d + ctm.f;
+  const screenDist = Math.hypot(evt.clientX - targetScreenX, evt.clientY - targetScreenY);
+  const screenTol = Math.max(MIN_TAP_TOLERANCE_PX, svgTolerance * ctm.a);
+  return screenDist <= screenTol;
+}
+
+function resolveMapCountryClick(targetEl, point, evt, ctm, question) {
+  state.answered = true;
+  clearInterval(state.timerHandle);
+
+  const pathEl = targetEl.closest ? targetEl.closest('path[id]') : null;
+  const clickedCode = pathEl ? pathEl.id : null;
+  let isCorrect = clickedCode === question.targetCode;
+
+  if (!isCorrect) {
+    // Tolerance fallback so small countries (e.g. Liechtenstein, South Korea)
+    // stay comfortably tappable even when their shape is only a few pixels
+    // wide on screen.
+    const targetPath = state.mapSvg.getElementById(question.targetCode);
+    if (targetPath) {
+      const cx = parseFloat(targetPath.dataset.cx);
+      const cy = parseFloat(targetPath.dataset.cy);
+      const tol = parseFloat(targetPath.dataset.tol);
+      if (withinScreenTolerance(cx, cy, evt, ctm, tol)) isCorrect = true;
+    }
+  }
+
+  highlightMapTarget(question, isCorrect);
+  if (!isCorrect) addClickMarker(point);
+  finishAnswer(isCorrect);
+}
+
+function resolveMapCityClick(point, evt, ctm, question) {
+  state.answered = true;
+  clearInterval(state.timerHandle);
+
+  const [lat, lon] = question.targetCoords;
+  const targetX = (lon + 180) / 360 * MAP_WIDTH;
+  const targetY = (90 - lat) / 180 * MAP_HEIGHT;
+  const isCorrect = withinScreenTolerance(targetX, targetY, evt, ctm, CITY_CLICK_TOLERANCE);
+
+  highlightMapTarget(question, isCorrect);
+  if (!isCorrect) addClickMarker(point);
+  finishAnswer(isCorrect);
+}
+
+function highlightMapTarget(question, isCorrect) {
+  clearMapHighlights();
+  const cssClass = isCorrect ? 'map-correct' : 'map-wrong-target';
+  if (question.promptType === 'map-country') {
+    const targetPath = state.mapSvg.getElementById(question.targetCode);
+    if (targetPath) targetPath.classList.add(cssClass);
+  } else {
+    const [lat, lon] = question.targetCoords;
+    const x = (lon + 180) / 360 * MAP_WIDTH;
+    const y = (90 - lat) / 180 * MAP_HEIGHT;
+    const marker = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    marker.setAttribute('cx', x);
+    marker.setAttribute('cy', y);
+    marker.setAttribute('r', 8);
+    marker.setAttribute('class', `map-city-marker ${cssClass}`);
+    marker.dataset.mapMarker = 'true';
+    state.mapSvg.appendChild(marker);
+  }
+}
+
+function addClickMarker(point) {
+  const marker = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  marker.setAttribute('cx', point.x);
+  marker.setAttribute('cy', point.y);
+  marker.setAttribute('r', 5);
+  marker.setAttribute('class', 'map-click-marker');
+  marker.dataset.mapMarker = 'true';
+  state.mapSvg.appendChild(marker);
+}
+
+function clearMapHighlights() {
+  if (!state.mapSvg) return;
+  state.mapSvg.querySelectorAll('.map-correct, .map-wrong-target').forEach((node) => {
+    node.classList.remove('map-correct', 'map-wrong-target');
+  });
+  state.mapSvg.querySelectorAll('[data-map-marker]').forEach((node) => node.remove());
 }
 
 function endRound() {
@@ -563,6 +783,7 @@ async function init() {
   state.allCountries = await response.json();
   renderStartScreen();
   refreshStartMascot();
+  loadMap().catch((err) => console.error('Karte konnte nicht geladen werden:', err));
 }
 
 init();

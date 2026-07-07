@@ -47,6 +47,15 @@
             <span class="mode-emoji">🚩</span>
             <span class="mode-name">Flaggen</span>
           </button>
+          <button class="mode-btn" data-mode="karte">
+            <span class="mode-emoji">🧭</span>
+            <span class="mode-name">Karte</span>
+          </button>
+        </div>
+
+        <div class="karte-submodes hidden" id="karte-submodes">
+          <button class="karte-submode-btn" data-mode="karte-laender">🌍 Länder finden</button>
+          <button class="karte-submode-btn" data-mode="karte-staedte">📍 Städte finden</button>
         </div>
 
         <div class="highscore-box">
@@ -101,6 +110,8 @@
           <button class="answer-btn" data-index="2"></button>
           <button class="answer-btn" data-index="3"></button>
         </div>
+
+        <div class="map-container hidden" id="map-container"></div>
       </div>
     </section>
 
