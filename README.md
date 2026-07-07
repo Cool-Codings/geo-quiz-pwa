@@ -25,7 +25,24 @@ Die Flaggen-Grafiken (`assets/flags/*.svg`) stammen aus dem Open-Source-Projekt
 [flag-icons](https://github.com/lipis/flag-icons) (MIT-Lizenz), siehe
 `assets/flags/SOURCE.md` und `assets/flags/LICENSE-flag-icons.txt`.
 
-Noch nicht umgesetzt: Maskottchen, Streak-/Herzen-System, Mehrsprachigkeit.
+**Maskottchen (Koala)**: begleitet auf allen drei Bildschirmen mit eigenen SVG-Posen
+(`assets/mascot/`):
+
+- Start-Bildschirm: tageszeitabhängige, zufällige Begrüßung in einer Sprechblase
+- Quiz-Bildschirm: reagiert nach jeder Antwort mit Pose + zufälligem Spruch aus
+  einem Pool positiver Formulierungen (bei falschen Antworten immer aufmunternd,
+  nie negativ)
+- Ergebnis-Bildschirm: Pose und Spruch richten sich nach der erreichten Quote
+  (≥90% "excited", ≥50% "happy", darunter tröstend-motivierendes "comfort")
+
+**Tages-Streak**: `localStorage` merkt sich, an wie vielen Tagen in Folge gespielt
+wurde (bricht bei einer ausgelassenen Tageslücke ab), sichtbar als Badge auf dem
+Start-Bildschirm. Bei Erreichen eines Meilensteins (3/7/14/30 Tage) gibt es auf
+dem Ergebnis-Bildschirm eine Konfetti-Animation und eine besonders freudige
+Koala-Pose.
+
+Noch nicht umgesetzt: Herzen-System, Belohnungs-Skins für den Koala,
+Mehrsprachigkeit, 2-Spieler-Modus.
 
 ## Lokal starten
 
@@ -45,10 +62,11 @@ Danach im Browser `http://localhost:8080` (bzw. den entsprechenden Port) öffnen
 ```
 index.html          Grundgerüst mit Start-, Quiz- und Ergebnis-Bildschirm
 css/style.css        Kindgerechtes, buntes Design
-js/app.js             Spiellogik (Fragen, Timer, Scoring, Fortschritt)
+js/app.js             Spiellogik (Fragen, Timer, Scoring, Fortschritt, Maskottchen, Streak)
 data/countries.json   Länder, Hauptstädte, größte Städte, Flüsse, Ländercodes je Schwierigkeitsstufe
 manifest.json         PWA-Manifest
-sw.js                 Service Worker (Offline-Caching, inkl. Flaggen)
+sw.js                 Service Worker (Offline-Caching, inkl. Flaggen und Maskottchen)
 icons/                App-Icons (SVG)
 assets/flags/          Flaggen-SVGs (flag-icons, MIT-Lizenz)
+assets/mascot/          Koala-Maskottchen in 4 Posen (SVG, eigene Illustration)
 ```

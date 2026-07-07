@@ -17,7 +17,11 @@
     <!-- Start-Bildschirm -->
     <section id="screen-start" class="screen">
       <div class="card">
-        <div class="mascot-emoji" aria-hidden="true">🌍</div>
+        <div class="mascot-area">
+          <div class="streak-badge hidden" id="streak-badge">🔥 <span id="streak-count">0</span> Tage in Folge!</div>
+          <div class="speech-bubble" id="start-bubble">Hallo! Schön, dass du da bist!</div>
+          <img class="mascot-img mascot-float" id="start-mascot" src="assets/mascot/koala-idle.svg" alt="Koala-Maskottchen" width="140" height="140" />
+        </div>
         <h1>Geo-Quiz</h1>
         <p class="subtitle">Wie gut kennst du dich auf der Welt aus?</p>
 
@@ -81,6 +85,11 @@
       </div>
       <div class="timer-number" id="timer-number">15</div>
 
+      <div class="quiz-mascot-row">
+        <img class="mascot-img mascot-float" id="quiz-mascot" src="assets/mascot/koala-idle.svg" alt="Koala-Maskottchen" width="72" height="72" />
+        <div class="speech-bubble speech-bubble-quiz hidden" id="quiz-bubble"></div>
+      </div>
+
       <div class="card question-card">
         <p class="question-label" id="question-label">Wie heißt die Hauptstadt von...?</p>
         <h2 class="question-subject" id="question-subject">Land</h2>
@@ -98,7 +107,10 @@
     <!-- Ergebnis-Bildschirm -->
     <section id="screen-result" class="screen hidden">
       <div class="card">
-        <div class="mascot-emoji" id="result-emoji" aria-hidden="true">🎉</div>
+        <div class="result-mascot-wrap" id="result-mascot-wrap">
+          <img class="mascot-img" id="result-mascot" src="assets/mascot/koala-happy.svg" alt="Koala-Maskottchen" width="140" height="140" />
+          <div class="confetti-layer" id="confetti-layer"></div>
+        </div>
         <h1 id="result-title">Super gemacht!</h1>
         <p class="result-mode-label" id="result-mode-label">Modus: Hauptstädte</p>
 

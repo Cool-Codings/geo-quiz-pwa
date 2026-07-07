@@ -6,6 +6,65 @@ const QUESTIONS_PER_ROUND = 10;
 const UNLOCK_THRESHOLD = 0.7;
 const ANSWER_FEEDBACK_DELAY = 1200;
 
+const MASCOT_SRC = {
+  idle: 'assets/mascot/koala-idle.svg',
+  happy: 'assets/mascot/koala-happy.svg',
+  comfort: 'assets/mascot/koala-comfort.svg',
+  excited: 'assets/mascot/koala-excited.svg',
+};
+
+const GREETINGS = {
+  morning: [
+    'Guten Morgen! Bereit für ein paar knifflige Fragen? ☀️',
+    'Guten Morgen! Lass uns die Welt entdecken! 🌍',
+  ],
+  afternoon: [
+    'Schön, dass du da bist! Lust auf ein Quiz? 🌤️',
+    'Hallo! Zeit für neue Entdeckungen! 🗺️',
+  ],
+  evening: [
+    'Guten Abend! Noch eine Runde Geo-Quiz? 🌙',
+    'Hallo! Lass uns gemeinsam die Welt erkunden! ✨',
+  ],
+};
+
+const CORRECT_MESSAGES = [
+  'Super gemacht! 🎉',
+  'Klasse! Du kennst dich aus! 🌟',
+  'Genau richtig! 👏',
+  'Wow, stark! 💪',
+  'Perfekt! Weiter so! ✨',
+];
+
+const WRONG_MESSAGES = [
+  "Kein Problem, nächstes Mal klappt's! 💛",
+  "Fast! Beim nächsten Mal schaffst du's! 🌈",
+  'Nicht so schlimm, weiter geht\'s! 🙂',
+  'Das war knifflig! Du lernst dazu! 🌱',
+  'Kopf hoch, du machst das gut! 🤗',
+];
+
+const RESULT_MESSAGES = {
+  excellent: [
+    'Wow, fantastisch! Du bist ein echter Geo-Profi! 🏆',
+    'Sensationell! Fast alles richtig! 🌟',
+  ],
+  good: [
+    'Super gemacht! Du kennst dich richtig gut aus! 🎉',
+    'Klasse Runde! Weiter so! 👏',
+  ],
+  practice: [
+    'Guter Versuch! Übung macht den Meister! 💪',
+    'Weiter so, du wirst von Mal zu Mal besser! 🌱',
+  ],
+};
+
+const STREAK_MILESTONES = [3, 7, 14, 30];
+const STREAK_COUNT_KEY = 'geoquiz-streak-count';
+const STREAK_LAST_DATE_KEY = 'geoquiz-streak-last-date';
+
+const CONFETTI_COLORS = ['#FF6B6B', '#FFD93D', '#06D6A0', '#4ECDC4', '#9B5DE5', '#4FC3F7'];
+
 function questionFromField(entry, pool, { promptLabel, promptValue, answerField, promptType }) {
   const correctValue = entry[answerField];
   const distractorPool = pool.filter((c) => c[answerField] !== correctValue);
@@ -123,6 +182,9 @@ const el = {
   startHighscore: document.getElementById('start-highscore'),
   difficultyButtons: Array.from(document.querySelectorAll('.difficulty-btn')),
   btnStart: document.getElementById('btn-start'),
+  startMascot: document.getElementById('start-mascot'),
+  startBubble: document.getElementById('start-bubble'),
+  streakBadge: document.getElementById('streak-badge'),
 
   quizProgress: document.getElementById('quiz-progress'),
   quizScore: document.getElementById('quiz-score'),
@@ -132,8 +194,9 @@ const el = {
   questionSubject: document.getElementById('question-subject'),
   questionFlag: document.getElementById('question-flag'),
   answerButtons: Array.from(document.querySelectorAll('.answer-btn')),
+  quizMascot: document.getElementById('quiz-mascot'),
+  quizBubble: document.getElementById('quiz-bubble'),
 
-  resultEmoji: document.getElementById('result-emoji'),
   resultTitle: document.getElementById('result-title'),
   resultModeLabel: document.getElementById('result-mode-label'),
   resultScore: document.getElementById('result-score'),
@@ -141,6 +204,8 @@ const el = {
   resultTotal: document.getElementById('result-total'),
   resultHighscoreMsg: document.getElementById('result-highscore-msg'),
   resultUnlockMsg: document.getElementById('result-unlock-msg'),
+  resultMascot: document.getElementById('result-mascot'),
+  confettiLayer: document.getElementById('confetti-layer'),
   btnAgain: document.getElementById('btn-again'),
   btnHome: document.getElementById('btn-home'),
 };
@@ -185,6 +250,86 @@ function shuffle(array) {
   return copy;
 }
 
+function pickRandom(pool) {
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function todayString() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function shiftDateString(dateStr, deltaDays) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  date.setDate(date.getDate() + deltaDays);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function getStreakState() {
+  const count = parseInt(localStorage.getItem(STREAK_COUNT_KEY), 10) || 0;
+  const lastDate = localStorage.getItem(STREAK_LAST_DATE_KEY);
+  return { count, lastDate };
+}
+
+function getDisplayStreak() {
+  const { count, lastDate } = getStreakState();
+  if (!lastDate) return 0;
+  const today = todayString();
+  const yesterday = shiftDateString(today, -1);
+  if (lastDate === today || lastDate === yesterday) return count;
+  return 0;
+}
+
+function registerPlayedToday() {
+  const { count, lastDate } = getStreakState();
+  const today = todayString();
+  if (lastDate === today) {
+    return { count, milestone: null };
+  }
+  const yesterday = shiftDateString(today, -1);
+  const newCount = lastDate === yesterday ? count + 1 : 1;
+  localStorage.setItem(STREAK_COUNT_KEY, String(newCount));
+  localStorage.setItem(STREAK_LAST_DATE_KEY, today);
+  const milestone = STREAK_MILESTONES.includes(newCount) ? newCount : null;
+  return { count: newCount, milestone };
+}
+
+function pickGreeting() {
+  const hour = new Date().getHours();
+  const bucket = hour < 11 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
+  return pickRandom(GREETINGS[bucket]);
+}
+
+function getResultTier(accuracy) {
+  if (accuracy >= 0.9) return 'excellent';
+  if (accuracy >= 0.5) return 'good';
+  return 'practice';
+}
+
+function setMascotPose(imgEl, pose, animationClass) {
+  imgEl.src = MASCOT_SRC[pose];
+  ['mascot-float', 'mascot-bounce', 'mascot-sway', 'mascot-pop'].forEach((c) => imgEl.classList.remove(c));
+  void imgEl.offsetWidth;
+  imgEl.classList.add(animationClass);
+}
+
+function launchConfetti(container, count = 24) {
+  container.innerHTML = '';
+  for (let i = 0; i < count; i++) {
+    const piece = document.createElement('span');
+    piece.className = 'confetti-piece';
+    piece.style.left = `${Math.random() * 100}%`;
+    piece.style.background = CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)];
+    piece.style.animationDuration = `${1000 + Math.random() * 700}ms`;
+    piece.style.animationDelay = `${Math.random() * 250}ms`;
+    container.appendChild(piece);
+  }
+  setTimeout(() => {
+    container.innerHTML = '';
+  }, 2200);
+}
+
 function showScreen(name) {
   Object.entries(screens).forEach(([key, section]) => {
     section.classList.toggle('hidden', key !== name);
@@ -207,6 +352,19 @@ function renderStartScreen() {
     btn.disabled = !isUnlocked;
     btn.classList.toggle('selected', difficulty === state.selectedDifficulty);
   });
+
+  renderStreakBadge();
+}
+
+function renderStreakBadge() {
+  const streak = getDisplayStreak();
+  el.streakBadge.classList.toggle('hidden', streak < 1);
+  el.streakBadge.textContent = `🔥 ${streak} ${streak === 1 ? 'Tag' : 'Tage'} in Folge!`;
+}
+
+function refreshStartMascot() {
+  el.startMascot.src = MASCOT_SRC.idle;
+  el.startBubble.textContent = pickGreeting();
 }
 
 el.modeButtons.forEach((btn) => {
@@ -229,6 +387,7 @@ el.btnStart.addEventListener('click', () => startRound(state.selectedMode, state
 el.btnAgain.addEventListener('click', () => startRound(state.roundMode, state.roundDifficulty));
 el.btnHome.addEventListener('click', () => {
   renderStartScreen();
+  refreshStartMascot();
   showScreen('start');
 });
 
@@ -275,6 +434,11 @@ function showQuestion() {
     btn.onclick = () => handleAnswer(i);
   });
 
+  el.quizMascot.src = MASCOT_SRC.idle;
+  el.quizMascot.classList.remove('mascot-bounce', 'mascot-sway');
+  el.quizMascot.classList.add('mascot-float');
+  el.quizBubble.classList.add('hidden');
+
   startTimer(TIME_LIMITS[state.roundDifficulty]);
 }
 
@@ -320,6 +484,12 @@ function handleAnswer(selectedIndex) {
     el.quizScore.textContent = state.score;
   }
 
+  const reactionPose = isCorrect ? 'happy' : 'comfort';
+  const reactionMessage = isCorrect ? pickRandom(CORRECT_MESSAGES) : pickRandom(WRONG_MESSAGES);
+  setMascotPose(el.quizMascot, reactionPose, isCorrect ? 'mascot-bounce' : 'mascot-sway');
+  el.quizBubble.textContent = reactionMessage;
+  el.quizBubble.classList.remove('hidden');
+
   setTimeout(() => {
     if (state.currentIndex + 1 < state.questions.length) {
       state.currentIndex += 1;
@@ -350,19 +520,31 @@ function endRound() {
     unlockedNextStage = true;
   }
 
-  renderResult({ isNewHighscore, unlockedNextStage });
+  const { milestone } = registerPlayedToday();
+
+  renderResult({ isNewHighscore, unlockedNextStage, milestone });
   showScreen('result');
 }
 
-function renderResult({ isNewHighscore, unlockedNextStage }) {
+const RESULT_TIER_POSE = { excellent: 'excited', good: 'happy', practice: 'comfort' };
+
+function renderResult({ isNewHighscore, unlockedNextStage, milestone }) {
   el.resultModeLabel.textContent = `Modus: ${MODES[state.roundMode].label}`;
   el.resultScore.textContent = state.score;
   el.resultCorrect.textContent = state.correctCount;
   el.resultTotal.textContent = state.questions.length;
 
-  const goodRun = state.correctCount / state.questions.length >= 0.5;
-  el.resultEmoji.textContent = goodRun ? '🎉' : '💪';
-  el.resultTitle.textContent = goodRun ? 'Super gemacht!' : 'Weiter üben!';
+  const accuracy = state.correctCount / state.questions.length;
+  const tier = getResultTier(accuracy);
+  const pose = milestone ? 'excited' : RESULT_TIER_POSE[tier];
+  el.resultMascot.src = MASCOT_SRC[pose];
+  el.resultMascot.classList.remove('mascot-pop');
+  void el.resultMascot.offsetWidth;
+  el.resultMascot.classList.add('mascot-pop');
+
+  el.resultTitle.textContent = milestone
+    ? `🎉 ${milestone} Tage in Folge! Du bist ein Streak-Champion!`
+    : pickRandom(RESULT_MESSAGES[tier]);
 
   el.resultHighscoreMsg.classList.toggle('hidden', !isNewHighscore);
   el.resultUnlockMsg.classList.toggle('hidden', !unlockedNextStage);
@@ -370,12 +552,17 @@ function renderResult({ isNewHighscore, unlockedNextStage }) {
     const nextDifficulty = DIFFICULTIES[DIFFICULTIES.indexOf(state.roundDifficulty) + 1];
     el.resultUnlockMsg.textContent = `🔓 Stufe "${DIFFICULTY_LABELS[nextDifficulty]}" freigeschaltet!`;
   }
+
+  if (milestone) {
+    launchConfetti(el.confettiLayer);
+  }
 }
 
 async function init() {
   const response = await fetch('data/countries.json');
   state.allCountries = await response.json();
   renderStartScreen();
+  refreshStartMascot();
 }
 
 init();

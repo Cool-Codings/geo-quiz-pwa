@@ -1,4 +1,4 @@
-const CACHE_NAME = 'geo-quiz-cache-v3';
+const CACHE_NAME = 'geo-quiz-cache-v4';
 const APP_SHELL = [
   './',
   './index.html',
@@ -8,6 +8,10 @@ const APP_SHELL = [
   './data/countries.json',
   './icons/icon.svg',
   './icons/icon-maskable.svg',
+  './assets/mascot/koala-idle.svg',
+  './assets/mascot/koala-happy.svg',
+  './assets/mascot/koala-comfort.svg',
+  './assets/mascot/koala-excited.svg',
 ];
 
 self.addEventListener('install', (event) => {

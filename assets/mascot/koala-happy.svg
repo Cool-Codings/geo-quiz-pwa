@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+  <!-- Ohren -->
+  <circle cx="62" cy="46" r="30" fill="#8D9AA8" />
+  <circle cx="62" cy="49" r="16" fill="#FFC1CC" />
+  <circle cx="178" cy="46" r="30" fill="#8D9AA8" />
+  <circle cx="178" cy="49" r="16" fill="#FFC1CC" />
+
+  <!-- Füße -->
+  <ellipse cx="93" cy="223" rx="19" ry="13" fill="#A9B4C0" />
+  <ellipse cx="93" cy="226" rx="10" ry="6" fill="#FDF6E9" />
+  <ellipse cx="147" cy="223" rx="19" ry="13" fill="#A9B4C0" />
+  <ellipse cx="147" cy="226" rx="10" ry="6" fill="#FDF6E9" />
+
+  <!-- Körper -->
+  <ellipse cx="120" cy="170" rx="56" ry="52" fill="#A9B4C0" />
+  <ellipse cx="120" cy="182" rx="34" ry="32" fill="#FDF6E9" />
+
+  <!-- Kopf -->
+  <circle cx="120" cy="90" r="62" fill="#A9B4C0" />
+
+  <!-- Wangen -->
+  <ellipse cx="80" cy="102" rx="13" ry="8" fill="#FFAFC0" opacity="0.75" />
+  <ellipse cx="160" cy="102" rx="13" ry="8" fill="#FFAFC0" opacity="0.75" />
+
+  <!-- Augen: fröhlich zusammengekniffen -->
+  <path d="M88 86 Q98 74 108 86" stroke="#2B2B3D" stroke-width="5" fill="none" stroke-linecap="round" />
+  <path d="M132 86 Q142 74 152 86" stroke="#2B2B3D" stroke-width="5" fill="none" stroke-linecap="round" />
+
+  <!-- Nase -->
+  <ellipse cx="120" cy="106" rx="18" ry="13" fill="#37474F" />
+  <ellipse cx="115" cy="101" rx="5" ry="3.5" fill="#54626C" />
+
+  <!-- Mund: breites, offenes Lächeln -->
+  <path d="M98,120 Q120,148 142,120 Q120,134 98,120 Z" fill="#2B2B3D" />
+
+  <!-- Beide Arme hoch: Hurra! -->
+  <rect x="44" y="86" width="24" height="56" rx="12" fill="#A9B4C0" transform="rotate(150 56 142)"  stroke="#8D9AA8" stroke-width="2" />
+  <circle cx="30" cy="90" r="14" fill="#A9B4C0" stroke="#8D9AA8" stroke-width="2" />
+  <ellipse cx="28" cy="88" rx="6.5" ry="4.5" fill="#FDF6E9" />
+
+  <rect x="172" y="86" width="24" height="56" rx="12" fill="#A9B4C0" transform="rotate(-150 184 142)"  stroke="#8D9AA8" stroke-width="2" />
+  <circle cx="210" cy="90" r="14" fill="#A9B4C0" stroke="#8D9AA8" stroke-width="2" />
+  <ellipse cx="212" cy="88" rx="6.5" ry="4.5" fill="#FDF6E9" />
+
+  <!-- Funkel-Sterne -->
+  <path d="M40 45 l4 10 10 4 -10 4 -4 10 -4 -10 -10 -4 10 -4 z" fill="#FFD93D" />
+  <path d="M205 40 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z" fill="#FFD93D" />
+  <path d="M120 14 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3 z" fill="#FFD93D" />
+</svg>

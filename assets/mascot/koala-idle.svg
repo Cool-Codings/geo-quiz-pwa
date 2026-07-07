@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+  <!-- Ohren -->
+  <circle cx="62" cy="46" r="30" fill="#8D9AA8" />
+  <circle cx="62" cy="49" r="16" fill="#FFC1CC" />
+  <circle cx="178" cy="46" r="30" fill="#8D9AA8" />
+  <circle cx="178" cy="49" r="16" fill="#FFC1CC" />
+
+  <!-- Füße -->
+  <ellipse cx="93" cy="223" rx="19" ry="13" fill="#A9B4C0" />
+  <ellipse cx="93" cy="226" rx="10" ry="6" fill="#FDF6E9" />
+  <ellipse cx="147" cy="223" rx="19" ry="13" fill="#A9B4C0" />
+  <ellipse cx="147" cy="226" rx="10" ry="6" fill="#FDF6E9" />
+
+  <!-- Körper -->
+  <ellipse cx="120" cy="170" rx="56" ry="52" fill="#A9B4C0" />
+  <ellipse cx="120" cy="182" rx="34" ry="32" fill="#FDF6E9" />
+
+  <!-- Kopf -->
+  <circle cx="120" cy="90" r="62" fill="#A9B4C0" />
+
+  <!-- Wangen -->
+  <ellipse cx="80" cy="102" rx="12" ry="7" fill="#FFAFC0" opacity="0.6" />
+  <ellipse cx="160" cy="102" rx="12" ry="7" fill="#FFAFC0" opacity="0.6" />
+
+  <!-- Augen -->
+  <circle cx="98" cy="86" r="7" fill="#2B2B3D" />
+  <circle cx="96" cy="84" r="2.2" fill="#FFFFFF" />
+  <circle cx="142" cy="86" r="7" fill="#2B2B3D" />
+  <circle cx="140" cy="84" r="2.2" fill="#FFFFFF" />
+
+  <!-- Nase -->
+  <ellipse cx="120" cy="106" rx="18" ry="13" fill="#37474F" />
+  <ellipse cx="115" cy="101" rx="5" ry="3.5" fill="#54626C" />
+
+  <!-- Mund -->
+  <path d="M104,122 Q120,133 136,122" stroke="#2B2B3D" stroke-width="5" fill="none" stroke-linecap="round" />
+
+  <!-- Linker Arm: hängt entspannt -->
+  <rect x="60" y="150" width="24" height="52" rx="12" fill="#A9B4C0" transform="rotate(18 72 150)"  stroke="#8D9AA8" stroke-width="2" />
+  <circle cx="55" cy="200" r="13" fill="#A9B4C0" stroke="#8D9AA8" stroke-width="2" />
+  <ellipse cx="55" cy="202" rx="6" ry="4" fill="#FDF6E9" />
+
+  <!-- Rechter Arm: winkt -->
+  <rect x="160" y="96" width="24" height="52" rx="12" fill="#A9B4C0" transform="rotate(35 172 148)" stroke="#8D9AA8" stroke-width="2" />
+  <circle cx="202" cy="105" r="13" fill="#A9B4C0" stroke="#8D9AA8" stroke-width="2" />
+  <ellipse cx="204" cy="103" rx="6" ry="4" fill="#FDF6E9" />
+  <path d="M218 84 Q 226 89 220 98" stroke="#8D9AA8" stroke-width="4" fill="none" stroke-linecap="round" />
+  <path d="M226 96 Q 234 101 228 110" stroke="#8D9AA8" stroke-width="4" fill="none" stroke-linecap="round" />
+</svg>
