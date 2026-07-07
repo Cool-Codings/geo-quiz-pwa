@@ -118,6 +118,11 @@ h1 {
 .mode-btn[data-mode="laender"] { background: var(--color-teal); }
 .mode-btn[data-mode="staedte"] { background: var(--color-purple); }
 .mode-btn[data-mode="fluesse"] { background: var(--color-sky); }
+.mode-btn[data-mode="flaggen"] { background: var(--color-grass); }
+
+.mode-list .mode-btn:last-child {
+  grid-column: 1 / -1;
+}
 
 .mode-btn.selected {
   border-color: var(--color-text);
@@ -265,6 +270,19 @@ h1 {
   font-size: 2.1rem;
   margin: 0 0 26px;
   color: var(--color-purple);
+}
+
+.question-flag {
+  display: block;
+  width: 100%;
+  max-width: 220px;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  margin: 0 auto 26px;
+  border-radius: 12px;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.12), 0 8px 16px rgba(0, 0, 0, 0.15);
+  border: 3px solid #fff;
+  outline: 1px solid #e0e0f0;
 }
 
 .answers-grid {

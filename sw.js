@@ -1,4 +1,4 @@
-const CACHE_NAME = 'geo-quiz-cache-v2';
+const CACHE_NAME = 'geo-quiz-cache-v3';
 const APP_SHELL = [
   './',
   './index.html',
@@ -12,7 +12,12 @@ const APP_SHELL = [
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL))
+    caches.open(CACHE_NAME).then(async (cache) => {
+      await cache.addAll(APP_SHELL);
+      const countries = await fetch('./data/countries.json').then((r) => r.json());
+      const flagUrls = countries.map((c) => `./assets/flags/${c.code}.svg`);
+      await cache.addAll(flagUrls);
+    })
   );
   self.skipWaiting();
 });

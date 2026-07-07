@@ -6,7 +6,7 @@ const QUESTIONS_PER_ROUND = 10;
 const UNLOCK_THRESHOLD = 0.7;
 const ANSWER_FEEDBACK_DELAY = 1200;
 
-function questionFromField(entry, pool, { promptLabel, promptValue, answerField }) {
+function questionFromField(entry, pool, { promptLabel, promptValue, answerField, promptType }) {
   const correctValue = entry[answerField];
   const distractorPool = pool.filter((c) => c[answerField] !== correctValue);
   const distractors = shuffle(distractorPool).slice(0, 3).map((c) => c[answerField]);
@@ -14,6 +14,7 @@ function questionFromField(entry, pool, { promptLabel, promptValue, answerField 
   return {
     promptLabel,
     promptValue,
+    promptType: promptType || 'text',
     options,
     correctIndex: options.indexOf(correctValue),
   };
@@ -91,6 +92,23 @@ const MODES = {
       });
     },
   },
+  flaggen: {
+    id: 'flaggen',
+    label: 'Flaggen',
+    highscoreKey: 'geoquiz-highscore-flaggen',
+    unlockedKey: 'geoquiz-unlocked-difficulty-flaggen',
+    getPool(countries, difficulty) {
+      return countries.filter((c) => c.difficulty === difficulty && c.code);
+    },
+    buildQuestion(entry, pool) {
+      return questionFromField(entry, pool, {
+        promptLabel: 'Zu welchem Land gehört diese Flagge?',
+        promptValue: entry.code,
+        answerField: 'country',
+        promptType: 'image',
+      });
+    },
+  },
 };
 
 const screens = {
@@ -112,6 +130,7 @@ const el = {
   timerNumber: document.getElementById('timer-number'),
   questionLabel: document.getElementById('question-label'),
   questionSubject: document.getElementById('question-subject'),
+  questionFlag: document.getElementById('question-flag'),
   answerButtons: Array.from(document.querySelectorAll('.answer-btn')),
 
   resultEmoji: document.getElementById('result-emoji'),
@@ -239,7 +258,15 @@ function showQuestion() {
   el.quizProgress.textContent = `${MODES[state.roundMode].label} · Frage ${state.currentIndex + 1} von ${state.questions.length}`;
   el.quizScore.textContent = state.score;
   el.questionLabel.textContent = question.promptLabel;
-  el.questionSubject.textContent = question.promptValue;
+
+  const isImagePrompt = question.promptType === 'image';
+  el.questionSubject.classList.toggle('hidden', isImagePrompt);
+  el.questionFlag.classList.toggle('hidden', !isImagePrompt);
+  if (isImagePrompt) {
+    el.questionFlag.src = `assets/flags/${question.promptValue}.svg`;
+  } else {
+    el.questionSubject.textContent = question.promptValue;
+  }
 
   el.answerButtons.forEach((btn, i) => {
     btn.textContent = question.options[i];
