@@ -1,13 +1,19 @@
-const CACHE_NAME = 'geo-quiz-cache-v8';
+const CACHE_NAME = 'geo-quiz-cache-v9';
 const APP_SHELL = [
   './',
   './index.html',
   './manifest.json',
   './css/style.css',
+  './js/i18n.js',
   './js/app.js',
   './data/countries.json',
   './icons/icon.svg',
   './icons/icon-maskable.svg',
+  './icons/icon-180.png',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
+  './icons/icon-maskable-192.png',
+  './icons/icon-maskable-512.png',
   './assets/mascot/koala-idle.svg',
   './assets/mascot/koala-happy.svg',
   './assets/mascot/koala-comfort.svg',

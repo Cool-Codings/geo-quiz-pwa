@@ -1,12 +1,45 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+    <linearGradient id="bgm" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#4FC3F7" />
       <stop offset="100%" stop-color="#FFD93D" />
     </linearGradient>
   </defs>
-  <rect width="512" height="512" fill="url(#bg)" />
-  <circle cx="256" cy="256" r="120" fill="#06D6A0" />
-  <path d="M170 216 Q 220 200 250 226 Q 280 256 342 232" stroke="#0B8A63" stroke-width="12" fill="none" stroke-linecap="round" />
-  <path d="M162 296 Q 214 312 246 296 Q 296 280 344 310" stroke="#0B8A63" stroke-width="12" fill="none" stroke-linecap="round" />
+  <rect width="512" height="512" fill="url(#bgm)" />
+
+  <g transform="translate(256,256) scale(0.72) translate(-256,-256)">
+    <!-- Globus -->
+    <circle cx="256" cy="345" r="132" fill="#3DB8E8" stroke="#1E8FC4" stroke-width="6" />
+    <path d="M156 300 Q 200 270 240 296 Q 265 314 230 340 Q 195 362 165 340 Q 145 322 156 300Z" fill="#06D6A0" />
+    <path d="M270 270 Q 320 260 350 292 Q 368 314 340 330 Q 305 348 278 322 Q 258 296 270 270Z" fill="#06D6A0" />
+    <path d="M210 380 Q 250 368 290 392 Q 310 406 280 420 Q 240 434 210 412 Q 194 396 210 380Z" fill="#06D6A0" />
+    <ellipse cx="256" cy="345" rx="132" ry="132" fill="none" stroke="#ffffff" stroke-width="7" opacity="0.35" />
+    <path d="M124 345 Q 256 385 388 345" stroke="#ffffff" stroke-width="5" fill="none" opacity="0.35" stroke-linecap="round" />
+
+    <!-- Koala: Ohren -->
+    <circle cx="178" cy="152" r="46" fill="#8D9AA8" />
+    <circle cx="178" cy="156" r="25" fill="#FFC1CC" />
+    <circle cx="334" cy="152" r="46" fill="#8D9AA8" />
+    <circle cx="334" cy="156" r="25" fill="#FFC1CC" />
+
+    <!-- Koala: Kopf -->
+    <circle cx="256" cy="210" r="98" fill="#A9B4C0" stroke="#8D9AA8" stroke-width="4" />
+
+    <!-- Wangen -->
+    <ellipse cx="198" cy="228" rx="19" ry="11" fill="#FFAFC0" opacity="0.65" />
+    <ellipse cx="314" cy="228" rx="19" ry="11" fill="#FFAFC0" opacity="0.65" />
+
+    <!-- Augen -->
+    <circle cx="222" cy="196" r="12" fill="#2B2B3D" />
+    <circle cx="218" cy="192" r="4" fill="#FFFFFF" />
+    <circle cx="290" cy="196" r="12" fill="#2B2B3D" />
+    <circle cx="286" cy="192" r="4" fill="#FFFFFF" />
+
+    <!-- Nase -->
+    <ellipse cx="256" cy="228" rx="30" ry="21" fill="#37474F" />
+    <ellipse cx="245" cy="219" rx="8" ry="6" fill="#54626C" />
+
+    <!-- Mund -->
+    <path d="M222,258 Q256,280 290,258" stroke="#2B2B3D" stroke-width="8" fill="none" stroke-linecap="round" />
+  </g>
 </svg>

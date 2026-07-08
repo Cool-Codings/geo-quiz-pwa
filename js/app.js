@@ -1,5 +1,4 @@
 const DIFFICULTIES = ['leicht', 'mittel', 'schwer'];
-const DIFFICULTY_LABELS = { leicht: 'Leicht', mittel: 'Mittel', schwer: 'Schwer' };
 const TIME_LIMITS = { leicht: 15, mittel: 12, schwer: 10 };
 const POINTS_PER_CORRECT = { leicht: 10, mittel: 15, schwer: 20 };
 const QUESTIONS_PER_ROUND = 10;
@@ -19,83 +18,13 @@ const BEST_STREAK_KEY = 'geoquiz-best-streak';
 const ACTIVE_SKIN_KEY = 'geoquiz-active-skin';
 
 const SKINS = {
-  none: { id: 'none', label: 'Standard', accessory: null, hint: null, isUnlocked: () => true },
-  hat: {
-    id: 'hat',
-    label: 'Hut',
-    accessory: 'hat',
-    hint: 'Ab 5 gespielten Runden',
-    isUnlocked: (stats) => stats.roundsPlayed >= 5,
-  },
-  sunglasses: {
-    id: 'sunglasses',
-    label: 'Sonnenbrille',
-    accessory: 'sunglasses',
-    hint: 'Ab 3 Tagen Streak',
-    isUnlocked: (stats) => stats.bestStreak >= 3,
-  },
-  scarf: {
-    id: 'scarf',
-    label: 'Schal',
-    accessory: 'scarf',
-    hint: 'Ab 300 Punkten insgesamt',
-    isUnlocked: (stats) => stats.lifetimeScore >= 300,
-  },
-  crown: {
-    id: 'crown',
-    label: 'Krone',
-    accessory: 'crown',
-    hint: 'Ab 7 Tagen Streak',
-    isUnlocked: (stats) => stats.bestStreak >= 7,
-  },
+  none: { id: 'none', accessory: null, isUnlocked: () => true },
+  hat: { id: 'hat', accessory: 'hat', isUnlocked: (stats) => stats.roundsPlayed >= 5 },
+  sunglasses: { id: 'sunglasses', accessory: 'sunglasses', isUnlocked: (stats) => stats.bestStreak >= 3 },
+  scarf: { id: 'scarf', accessory: 'scarf', isUnlocked: (stats) => stats.lifetimeScore >= 300 },
+  crown: { id: 'crown', accessory: 'crown', isUnlocked: (stats) => stats.bestStreak >= 7 },
 };
 const SKIN_ORDER = ['none', 'hat', 'sunglasses', 'scarf', 'crown'];
-
-const GREETINGS = {
-  morning: [
-    'Guten Morgen! Bereit für ein paar knifflige Fragen? ☀️',
-    'Guten Morgen! Lass uns die Welt entdecken! 🌍',
-  ],
-  afternoon: [
-    'Schön, dass du da bist! Lust auf ein Quiz? 🌤️',
-    'Hallo! Zeit für neue Entdeckungen! 🗺️',
-  ],
-  evening: [
-    'Guten Abend! Noch eine Runde Geo-Quiz? 🌙',
-    'Hallo! Lass uns gemeinsam die Welt erkunden! ✨',
-  ],
-};
-
-const CORRECT_MESSAGES = [
-  'Super gemacht! 🎉',
-  'Klasse! Du kennst dich aus! 🌟',
-  'Genau richtig! 👏',
-  'Wow, stark! 💪',
-  'Perfekt! Weiter so! ✨',
-];
-
-const WRONG_MESSAGES = [
-  "Kein Problem, nächstes Mal klappt's! 💛",
-  "Fast! Beim nächsten Mal schaffst du's! 🌈",
-  'Nicht so schlimm, weiter geht\'s! 🙂',
-  'Das war knifflig! Du lernst dazu! 🌱',
-  'Kopf hoch, du machst das gut! 🤗',
-];
-
-const RESULT_MESSAGES = {
-  excellent: [
-    'Wow, fantastisch! Du bist ein echter Geo-Profi! 🏆',
-    'Sensationell! Fast alles richtig! 🌟',
-  ],
-  good: [
-    'Super gemacht! Du kennst dich richtig gut aus! 🎉',
-    'Klasse Runde! Weiter so! 👏',
-  ],
-  practice: [
-    'Guter Versuch! Übung macht den Meister! 💪',
-    'Weiter so, du wirst von Mal zu Mal besser! 🌱',
-  ],
-};
 
 const STREAK_MILESTONES = [3, 7, 14, 30];
 const STREAK_COUNT_KEY = 'geoquiz-streak-count';
@@ -107,11 +36,6 @@ const HEARTS_MAX = 3;
 const HEARTS_REGEN_INTERVAL_MS = 30 * 60 * 1000;
 const HEARTS_COUNT_KEY = 'geoquiz-hearts-count';
 const HEARTS_ANCHOR_KEY = 'geoquiz-hearts-anchor';
-
-const HEARTS_DEPLETED_MESSAGES = [
-  'Kein Problem! Deine Herzen füllen sich bald wieder auf. 💛',
-  'Alle Herzen aufgebraucht - aber du hast schon tolle Punkte gesammelt! 🌟',
-];
 
 const MAP_WIDTH = 960;
 const MAP_HEIGHT = 480;
@@ -134,9 +58,9 @@ const MAP_TAP_THRESHOLD_PX = 10;
 const MAP_ZOOM_ANIM_MS = 380;
 
 function questionFromField(entry, pool, { promptLabel, promptValue, answerField, promptType }) {
-  const correctValue = entry[answerField];
-  const distractorPool = pool.filter((c) => c[answerField] !== correctValue);
-  const distractors = shuffle(distractorPool).slice(0, 3).map((c) => c[answerField]);
+  const correctValue = localizedField(entry, answerField);
+  const distractorPool = pool.filter((c) => localizedField(c, answerField) !== correctValue);
+  const distractors = shuffle(distractorPool).slice(0, 3).map((c) => localizedField(c, answerField));
   const options = shuffle([correctValue, ...distractors]);
   return {
     promptLabel,
@@ -147,10 +71,13 @@ function questionFromField(entry, pool, { promptLabel, promptValue, answerField,
   };
 }
 
+function modeLabel(modeId) {
+  return t(`mode.${modeId}`);
+}
+
 const MODES = {
   hauptstaedte: {
     id: 'hauptstaedte',
-    label: 'Hauptstädte',
     highscoreKey: 'geoquiz-highscore-hauptstaedte',
     unlockedKey: 'geoquiz-unlocked-difficulty-hauptstaedte',
     getPool(countries, difficulty) {
@@ -158,15 +85,14 @@ const MODES = {
     },
     buildQuestion(entry, pool) {
       return questionFromField(entry, pool, {
-        promptLabel: 'Wie heißt die Hauptstadt von...?',
-        promptValue: entry.country,
+        promptLabel: 'q.capitalOf',
+        promptValue: localizedField(entry, 'country'),
         answerField: 'capital',
       });
     },
   },
   laender: {
     id: 'laender',
-    label: 'Länder',
     highscoreKey: 'geoquiz-highscore-laender',
     unlockedKey: 'geoquiz-unlocked-difficulty-laender',
     getPool(countries, difficulty) {
@@ -175,21 +101,20 @@ const MODES = {
     buildQuestion(entry, pool) {
       if (Math.random() < 0.5) {
         return questionFromField(entry, pool, {
-          promptLabel: 'Wie heißt die Hauptstadt von...?',
-          promptValue: entry.country,
+          promptLabel: 'q.capitalOf',
+          promptValue: localizedField(entry, 'country'),
           answerField: 'capital',
         });
       }
       return questionFromField(entry, pool, {
-        promptLabel: 'Welches Land hat diese Hauptstadt?',
-        promptValue: entry.capital,
+        promptLabel: 'q.countryOfCapital',
+        promptValue: localizedField(entry, 'capital'),
         answerField: 'country',
       });
     },
   },
   staedte: {
     id: 'staedte',
-    label: 'Städte',
     highscoreKey: 'geoquiz-highscore-staedte',
     unlockedKey: 'geoquiz-unlocked-difficulty-staedte',
     getPool(countries, difficulty) {
@@ -197,15 +122,14 @@ const MODES = {
     },
     buildQuestion(entry, pool) {
       return questionFromField(entry, pool, {
-        promptLabel: 'Welche ist die größte Stadt in...?',
-        promptValue: entry.country,
+        promptLabel: 'q.largestCityOf',
+        promptValue: localizedField(entry, 'country'),
         answerField: 'largestCity',
       });
     },
   },
   fluesse: {
     id: 'fluesse',
-    label: 'Flüsse',
     highscoreKey: 'geoquiz-highscore-fluesse',
     unlockedKey: 'geoquiz-unlocked-difficulty-fluesse',
     getPool(countries, difficulty) {
@@ -213,15 +137,14 @@ const MODES = {
     },
     buildQuestion(entry, pool) {
       return questionFromField(entry, pool, {
-        promptLabel: 'Durch welches Land fließt dieser Fluss?',
-        promptValue: entry.river,
+        promptLabel: 'q.riverCountry',
+        promptValue: localizedField(entry, 'river'),
         answerField: 'country',
       });
     },
   },
   flaggen: {
     id: 'flaggen',
-    label: 'Flaggen',
     highscoreKey: 'geoquiz-highscore-flaggen',
     unlockedKey: 'geoquiz-unlocked-difficulty-flaggen',
     getPool(countries, difficulty) {
@@ -229,7 +152,7 @@ const MODES = {
     },
     buildQuestion(entry, pool) {
       return questionFromField(entry, pool, {
-        promptLabel: 'Zu welchem Land gehört diese Flagge?',
+        promptLabel: 'q.flagCountry',
         promptValue: entry.code,
         answerField: 'country',
         promptType: 'image',
@@ -238,7 +161,6 @@ const MODES = {
   },
   umriss: {
     id: 'umriss',
-    label: 'Länderumrisse',
     highscoreKey: 'geoquiz-highscore-umriss',
     unlockedKey: 'geoquiz-unlocked-difficulty-umriss',
     getPool(countries, difficulty) {
@@ -248,8 +170,8 @@ const MODES = {
     },
     buildQuestion(entry, pool) {
       const question = questionFromField(entry, pool, {
-        promptLabel: 'Welches Land hat diesen Umriss?',
-        promptValue: entry.country,
+        promptLabel: 'q.outlineCountry',
+        promptValue: localizedField(entry, 'country'),
         answerField: 'country',
         promptType: 'outline',
       });
@@ -259,7 +181,6 @@ const MODES = {
   },
   nachbarn: {
     id: 'nachbarn',
-    label: 'Nachbarländer',
     highscoreKey: 'geoquiz-highscore-nachbarn',
     unlockedKey: 'geoquiz-unlocked-difficulty-nachbarn',
     getPool(countries, difficulty) {
@@ -271,7 +192,7 @@ const MODES = {
       // rather than the (same-difficulty) `pool` used for distractors.
       const neighborCode = pickRandom(entry.neighbors);
       const neighborCountry = state.allCountries.find((c) => c.code === neighborCode);
-      const correctValue = neighborCountry.country;
+      const correctValue = localizedField(neighborCountry, 'country');
 
       // Exclude every real neighbor of `entry` (not just the chosen one) from
       // the distractor pool, so no other option could also be a correct answer.
@@ -279,11 +200,11 @@ const MODES = {
       const distractorPool = state.allCountries.filter(
         (c) => c.difficulty === entry.difficulty && !excluded.has(c.code)
       );
-      const distractors = shuffle(distractorPool).slice(0, 3).map((c) => c.country);
+      const distractors = shuffle(distractorPool).slice(0, 3).map((c) => localizedField(c, 'country'));
       const options = shuffle([correctValue, ...distractors]);
       return {
-        promptLabel: 'Welches Land grenzt an...?',
-        promptValue: entry.country,
+        promptLabel: 'q.neighborOf',
+        promptValue: localizedField(entry, 'country'),
         promptType: 'text',
         options,
         correctIndex: options.indexOf(correctValue),
@@ -292,7 +213,6 @@ const MODES = {
   },
   kontinente: {
     id: 'kontinente',
-    label: 'Kontinente-Zuordnung',
     highscoreKey: 'geoquiz-highscore-kontinente',
     unlockedKey: 'geoquiz-unlocked-difficulty-kontinente',
     getPool(countries, difficulty) {
@@ -307,7 +227,6 @@ const MODES = {
   },
   'karte-laender': {
     id: 'karte-laender',
-    label: 'Karte: Länder finden',
     highscoreKey: 'geoquiz-highscore-karte-laender',
     unlockedKey: 'geoquiz-unlocked-difficulty-karte-laender',
     getPool(countries, difficulty) {
@@ -317,8 +236,8 @@ const MODES = {
     },
     buildQuestion(entry) {
       return {
-        promptLabel: 'Wo liegt dieses Land?',
-        promptValue: entry.country,
+        promptLabel: 'q.whereIsCountry',
+        promptValue: localizedField(entry, 'country'),
         promptType: 'map-country',
         targetCode: entry.code,
         targetContinent: entry.continent,
@@ -327,7 +246,6 @@ const MODES = {
   },
   'karte-staedte': {
     id: 'karte-staedte',
-    label: 'Karte: Städte finden',
     highscoreKey: 'geoquiz-highscore-karte-staedte',
     unlockedKey: 'geoquiz-unlocked-difficulty-karte-staedte',
     getPool(countries, difficulty) {
@@ -335,16 +253,16 @@ const MODES = {
       countries
         .filter((c) => c.difficulty === difficulty && c.capitalCoords && c.mapEligible)
         .forEach((c) => {
-          cities.push({ name: c.capital, coords: c.capitalCoords, continent: c.continent });
+          cities.push({ name: localizedField(c, 'capital'), coords: c.capitalCoords, continent: c.continent });
           if (c.largestCity !== c.capital && c.largestCityCoords) {
-            cities.push({ name: c.largestCity, coords: c.largestCityCoords, continent: c.continent });
+            cities.push({ name: localizedField(c, 'largestCity'), coords: c.largestCityCoords, continent: c.continent });
           }
         });
       return cities;
     },
     buildQuestion(entry) {
       return {
-        promptLabel: 'Wo liegt diese Stadt?',
+        promptLabel: 'q.whereIsCity',
         promptValue: entry.name,
         promptType: 'map-city',
         targetCoords: entry.coords,
@@ -368,6 +286,17 @@ const screens = {
 };
 
 const el = {
+  passwordOverlay: document.getElementById('password-overlay'),
+  passwordInput: document.getElementById('password-input'),
+  passwordError: document.getElementById('password-error'),
+  passwordRemember: document.getElementById('password-remember'),
+  btnPasswordSubmit: document.getElementById('btn-password-submit'),
+
+  settingsOverlay: document.getElementById('settings-overlay'),
+  btnSettingsOpen: document.getElementById('btn-settings-open'),
+  btnSettingsDone: document.getElementById('btn-settings-done'),
+  settingsLangButtons: Array.from(document.querySelectorAll('.settings-lang-btn')),
+
   modeButtons: Array.from(document.querySelectorAll('#mode-list .mode-btn')),
   karteSubmodes: document.getElementById('karte-submodes'),
   karteSubmodeButtons: Array.from(document.querySelectorAll('.karte-submode-btn')),
@@ -410,8 +339,7 @@ const el = {
   resultTitle: document.getElementById('result-title'),
   resultModeLabel: document.getElementById('result-mode-label'),
   resultScore: document.getElementById('result-score'),
-  resultCorrect: document.getElementById('result-correct'),
-  resultTotal: document.getElementById('result-total'),
+  resultCorrectLine: document.getElementById('result-correct-line'),
   resultHighscoreMsg: document.getElementById('result-highscore-msg'),
   resultUnlockMsg: document.getElementById('result-unlock-msg'),
   resultSkinMsg: document.getElementById('result-skin-msg'),
@@ -466,6 +394,7 @@ const el = {
 };
 
 const state = {
+  lang: loadStoredLang(),
   allCountries: [],
   selectedMode: 'hauptstaedte',
   selectedDifficulty: 'leicht',
@@ -533,6 +462,36 @@ function shuffle(array) {
 
 function pickRandom(pool) {
   return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// --- Sprachauswahl (i18n) ---
+
+function loadStoredLang() {
+  const stored = localStorage.getItem(LANG_STORAGE_KEY);
+  return SUPPORTED_LANGS.includes(stored) ? stored : DEFAULT_LANG;
+}
+
+function setLanguage(lang) {
+  if (!SUPPORTED_LANGS.includes(lang)) return;
+  state.lang = lang;
+  localStorage.setItem(LANG_STORAGE_KEY, lang);
+  applyStaticTranslations();
+  renderStartScreen();
+  refreshStartMascot();
+}
+
+function applyStaticTranslations() {
+  document.documentElement.lang = state.lang;
+  document.title = t('ui.appTitle');
+  document.querySelectorAll('[data-i18n]').forEach((node) => {
+    node.textContent = t(node.dataset.i18n);
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach((node) => {
+    node.placeholder = t(node.dataset.i18nPlaceholder);
+  });
+  document.querySelectorAll('[data-i18n-aria]').forEach((node) => {
+    node.setAttribute('aria-label', t(node.dataset.i18nAria));
+  });
 }
 
 function todayString() {
@@ -627,7 +586,7 @@ function renderHearts() {
   el.heartsRegenHint.classList.toggle('hidden', !showHint);
   if (showHint) {
     const minutes = Math.max(1, Math.ceil(msUntilNext / 60000));
-    el.heartsRegenHint.textContent = `Nächstes Herz in ${minutes} Min.`;
+    el.heartsRegenHint.textContent = t('ui.heartsRegenHint', { min: minutes });
   }
   return count;
 }
@@ -713,13 +672,13 @@ function renderSkinCollection() {
 
     const name = document.createElement('span');
     name.className = 'skin-name';
-    name.textContent = skin.label;
+    name.textContent = t(`skin.${id}.label`);
     tile.appendChild(name);
 
     if (!unlocked) {
       const hint = document.createElement('span');
       hint.className = 'skin-hint';
-      hint.textContent = skin.hint;
+      hint.textContent = t(`skin.${id}.hint`);
       tile.appendChild(hint);
     }
 
@@ -737,7 +696,7 @@ function renderSkinCollection() {
 function pickGreeting() {
   const hour = new Date().getHours();
   const bucket = hour < 11 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
-  return pickRandom(GREETINGS[bucket]);
+  return pickRandom(tList(`messages.greetings.${bucket}`));
 }
 
 function getResultTier(accuracy) {
@@ -788,7 +747,7 @@ function renderStartScreen() {
     btn.classList.toggle('selected', btn.dataset.mode === state.selectedMode);
   });
 
-  el.startModeLabel.textContent = MODES[state.selectedMode].label;
+  el.startModeLabel.textContent = modeLabel(state.selectedMode);
   el.startHighscore.textContent = getHighscore(state.selectedMode);
 
   const unlockedIndex = getUnlockedIndex(state.selectedMode);
@@ -808,7 +767,8 @@ function renderStartScreen() {
 function renderStreakBadge() {
   const streak = getDisplayStreak();
   el.streakBadge.classList.toggle('hidden', streak < 1);
-  el.streakBadge.textContent = `🔥 ${streak} ${streak === 1 ? 'Tag' : 'Tage'} in Folge!`;
+  const day = t(streak === 1 ? 'ui.daySingular' : 'ui.dayPlural');
+  el.streakBadge.textContent = t('ui.streakBadge', { n: streak, day });
 }
 
 function refreshStartMascot() {
@@ -816,6 +776,69 @@ function refreshStartMascot() {
   el.startBubble.textContent = pickGreeting();
   applySkinToMascot(el.startMascotAccessory);
 }
+
+// --- Einstellungen (Sprache) ---
+
+function renderSettingsModal() {
+  el.settingsLangButtons.forEach((btn) => {
+    btn.classList.toggle('selected', btn.dataset.lang === state.lang);
+  });
+}
+
+el.btnSettingsOpen.addEventListener('click', () => {
+  renderSettingsModal();
+  el.settingsOverlay.classList.remove('hidden');
+});
+
+el.btnSettingsDone.addEventListener('click', () => {
+  el.settingsOverlay.classList.add('hidden');
+});
+
+el.settingsLangButtons.forEach((btn) => {
+  btn.addEventListener('click', () => {
+    setLanguage(btn.dataset.lang);
+    renderSettingsModal();
+  });
+});
+
+// --- Passwortschutz ---
+// Not real security (there is no server) - just a lightweight, lightly
+// obfuscated gate so casual visitors can't stumble into the app, matching
+// the same pattern used by the sibling Tetris PWA.
+
+const PASSWORD_AUTH_KEY = 'geoquiz-auth-ok';
+const PW_CHAR_CODES = [103, 101, 111, 113, 117, 105, 122, 50, 48, 50, 54];
+
+function getAppPassword() {
+  return String.fromCharCode(...PW_CHAR_CODES);
+}
+
+function checkPasswordGate() {
+  if (localStorage.getItem(PASSWORD_AUTH_KEY) === 'true') return;
+  el.passwordOverlay.classList.remove('hidden');
+  el.passwordInput.focus();
+}
+
+function submitPassword() {
+  if (el.passwordInput.value === getAppPassword()) {
+    if (el.passwordRemember.checked) {
+      localStorage.setItem(PASSWORD_AUTH_KEY, 'true');
+    }
+    el.passwordError.classList.add('hidden');
+    el.passwordInput.value = '';
+    el.passwordOverlay.classList.add('hidden');
+  } else {
+    el.passwordError.textContent = t('password.wrong');
+    el.passwordError.classList.remove('hidden');
+    el.passwordInput.value = '';
+    el.passwordInput.focus();
+  }
+}
+
+el.btnPasswordSubmit.addEventListener('click', submitPassword);
+el.passwordInput.addEventListener('keydown', (evt) => {
+  if (evt.key === 'Enter') submitPassword();
+});
 
 el.modeButtons.forEach((btn) => {
   btn.addEventListener('click', () => {
@@ -925,13 +948,13 @@ function showKontinenteQuestion() {
   const entry = k.pool[k.currentIndex];
   k.firstAttempt = true;
 
-  el.quizProgress.textContent = `Kontinente-Zuordnung · Frage ${k.currentIndex + 1} von ${k.pool.length}`;
+  el.quizProgress.textContent = t('ui.progressQuiz', { mode: modeLabel('kontinente'), n: k.currentIndex + 1, total: k.pool.length });
   el.quizScore.textContent = k.score;
   el.quizHeartsRow.classList.add('hidden');
   el.timerWrap.classList.add('hidden');
   el.timerNumber.classList.add('hidden');
 
-  el.questionLabel.textContent = 'Ziehe das Land auf den richtigen Kontinent:';
+  el.questionLabel.textContent = t('q.dragContinent');
   el.questionSubject.classList.add('hidden');
   el.questionFlag.classList.add('hidden');
   el.answersGrid.classList.add('hidden');
@@ -939,7 +962,7 @@ function showKontinenteQuestion() {
   el.kontinenteWrap.classList.remove('hidden');
 
   el.kontinenteZones.forEach((zone) => zone.classList.remove('zone-correct', 'zone-wrong'));
-  el.kontinenteChip.textContent = entry.country;
+  el.kontinenteChip.textContent = localizedField(entry, 'country');
   el.kontinenteChip.classList.remove('chip-shake');
   resetKontinenteChipPosition();
 
@@ -1022,7 +1045,7 @@ function handleKontinenteDrop(continent, zoneEl) {
     el.quizScore.textContent = k.score;
     if (zoneEl) zoneEl.classList.add('zone-correct');
     setMascotPose(el.quizMascot, 'happy', 'mascot-bounce');
-    el.quizBubble.textContent = pickRandom(CORRECT_MESSAGES);
+    el.quizBubble.textContent = pickRandom(tList('messages.correct'));
     el.quizBubble.classList.remove('hidden');
 
     setTimeout(() => {
@@ -1043,7 +1066,7 @@ function handleKontinenteDrop(continent, zoneEl) {
       setTimeout(() => zoneEl.classList.remove('zone-wrong'), 420);
     }
     setMascotPose(el.quizMascot, 'comfort', 'mascot-sway');
-    el.quizBubble.textContent = `${pickRandom(WRONG_MESSAGES)} Versuch's nochmal!`;
+    el.quizBubble.textContent = `${pickRandom(tList('messages.wrong'))} ${t('kontinente.tryAgain')}`;
     el.quizBubble.classList.remove('hidden');
   }
 }
@@ -1229,7 +1252,7 @@ function finishPuzzle() {
   const isNewBest = best === null || elapsed < best;
   if (isNewBest) localStorage.setItem(PUZZLE_BESTTIME_KEY, String(elapsed));
 
-  el.puzzleResultTime.textContent = `Zeit: ${formatPuzzleTime(elapsed)}`;
+  el.puzzleResultTime.textContent = t('puzzle.resultTime', { time: formatPuzzleTime(elapsed) });
   el.puzzleResultBest.classList.toggle('hidden', !isNewBest);
   setMascotPose(el.puzzleResultMascot, 'excited', 'mascot-pop');
   applySkinToMascot(el.puzzleResultMascotAccessory);
@@ -1337,7 +1360,7 @@ function endDuelLeg() {
 }
 
 function showDuelHandoff() {
-  el.duelHandoffText.textContent = `Gib das Gerät an ${state.duel.player2Name} weiter!`;
+  el.duelHandoffText.textContent = t('duel.handoffText', { name: state.duel.player2Name });
   setMascotPose(el.duelHandoffMascot, 'happy', 'mascot-pop');
   showScreen('duelHandoff');
 }
@@ -1350,17 +1373,6 @@ el.btnDuelHandoffContinue.addEventListener('click', () => {
   showQuestion();
 });
 
-const DUEL_WIN_MESSAGES = ['Klasse gemacht! 🌟', 'Starke Leistung! 👏', 'Wow, richtig gut! 🎉'];
-const DUEL_CONSOLATION_MESSAGES = [
-  "Super gespielt! Beim nächsten Mal klappt's bestimmt! 💪",
-  'Toller Einsatz! Weiter so! 🌈',
-  'Gut gemacht - übe weiter und du holst auf! 🌱',
-];
-const DUEL_TIE_MESSAGES = [
-  '🤝 Unentschieden! Ihr seid beide Geo-Champions!',
-  '🤝 Gleichstand! Klasse gemacht, ihr beide!',
-];
-
 function showDuelResult() {
   const { player1Name, player2Name, player1Score, player2Score, player1Correct, player2Correct } = state.duel;
   const total = state.questions.length;
@@ -1369,8 +1381,8 @@ function showDuelResult() {
   el.duelName2.textContent = player2Name;
   el.duelScore1.textContent = player1Score;
   el.duelScore2.textContent = player2Score;
-  el.duelCorrect1.textContent = `${player1Correct} von ${total} richtig`;
-  el.duelCorrect2.textContent = `${player2Correct} von ${total} richtig`;
+  el.duelCorrect1.textContent = t('ui.correctOfTotal', { correct: player1Correct, total });
+  el.duelCorrect2.textContent = t('ui.correctOfTotal', { correct: player2Correct, total });
 
   const isTie = player1Score === player2Score;
   el.duelCard1.classList.toggle('winner', !isTie && player1Score > player2Score);
@@ -1378,14 +1390,14 @@ function showDuelResult() {
 
   let pose;
   if (isTie) {
-    el.duelWinnerText.textContent = pickRandom(DUEL_TIE_MESSAGES);
-    el.duelSubMessage.textContent = 'Ihr kennt euch beide super mit der Welt aus!';
+    el.duelWinnerText.textContent = pickRandom(tList('messages.duelTie'));
+    el.duelSubMessage.textContent = t('duel.tieSubMessage');
     pose = 'happy';
   } else {
     const winnerName = player1Score > player2Score ? player1Name : player2Name;
     const loserName = player1Score > player2Score ? player2Name : player1Name;
-    el.duelWinnerText.textContent = `🏆 ${winnerName} gewinnt! ${pickRandom(DUEL_WIN_MESSAGES)}`;
-    el.duelSubMessage.textContent = `${loserName}: ${pickRandom(DUEL_CONSOLATION_MESSAGES)}`;
+    el.duelWinnerText.textContent = t('duel.winnerLine', { name: winnerName, msg: pickRandom(tList('messages.duelWin')) });
+    el.duelSubMessage.textContent = t('duel.loserLine', { name: loserName, msg: pickRandom(tList('messages.duelConsolation')) });
     pose = 'excited';
   }
 
@@ -1419,15 +1431,15 @@ function showQuestion() {
 
   if (state.isDuel) {
     const playerName = state.duel.currentPlayer === 1 ? state.duel.player1Name : state.duel.player2Name;
-    el.quizProgress.textContent = `${playerName} · Frage ${state.currentIndex + 1} von ${state.questions.length}`;
+    el.quizProgress.textContent = t('ui.progressQuiz', { mode: playerName, n: state.currentIndex + 1, total: state.questions.length });
     el.quizHeartsRow.classList.add('hidden');
   } else {
-    el.quizProgress.textContent = `${MODES[state.roundMode].label} · Frage ${state.currentIndex + 1} von ${state.questions.length}`;
+    el.quizProgress.textContent = t('ui.progressQuiz', { mode: modeLabel(state.roundMode), n: state.currentIndex + 1, total: state.questions.length });
     el.quizHeartsRow.classList.remove('hidden');
     renderHearts();
   }
   el.quizScore.textContent = state.score;
-  el.questionLabel.textContent = question.promptLabel;
+  el.questionLabel.textContent = t(question.promptLabel);
 
   const isImagePrompt = question.promptType === 'image';
   const isOutlinePrompt = question.promptType === 'outline';
@@ -1543,7 +1555,7 @@ function finishAnswer(isCorrect) {
   }
 
   const reactionPose = isCorrect ? 'happy' : 'comfort';
-  const reactionMessage = isCorrect ? pickRandom(CORRECT_MESSAGES) : pickRandom(WRONG_MESSAGES);
+  const reactionMessage = isCorrect ? pickRandom(tList('messages.correct')) : pickRandom(tList('messages.wrong'));
   setMascotPose(el.quizMascot, reactionPose, isCorrect ? 'mascot-bounce' : 'mascot-sway');
   el.quizBubble.textContent = reactionMessage;
   el.quizBubble.classList.remove('hidden');
@@ -1917,10 +1929,9 @@ function endRound({ heartsDepleted = false } = {}) {
 const RESULT_TIER_POSE = { excellent: 'excited', good: 'happy', practice: 'comfort' };
 
 function renderResult({ isNewHighscore, unlockedNextStage, milestone, heartsDepleted, attempted, newlyUnlockedSkin }) {
-  el.resultModeLabel.textContent = `Modus: ${MODES[state.roundMode].label}`;
+  el.resultModeLabel.textContent = `${t('ui.modeLinePrefix')} ${modeLabel(state.roundMode)}`;
   el.resultScore.textContent = state.score;
-  el.resultCorrect.textContent = state.correctCount;
-  el.resultTotal.textContent = attempted;
+  el.resultCorrectLine.textContent = t('ui.correctOfTotal', { correct: state.correctCount, total: attempted });
 
   const accuracy = attempted > 0 ? state.correctCount / attempted : 0;
   const tier = getResultTier(accuracy);
@@ -1932,23 +1943,23 @@ function renderResult({ isNewHighscore, unlockedNextStage, milestone, heartsDepl
   applySkinToMascot(el.resultMascotAccessory);
 
   if (milestone) {
-    el.resultTitle.textContent = `🎉 ${milestone} Tage in Folge! Du bist ein Streak-Champion!`;
+    el.resultTitle.textContent = t('ui.streakMilestone', { n: milestone });
   } else if (heartsDepleted) {
-    el.resultTitle.textContent = pickRandom(HEARTS_DEPLETED_MESSAGES);
+    el.resultTitle.textContent = pickRandom(tList('messages.heartsDepleted'));
   } else {
-    el.resultTitle.textContent = pickRandom(RESULT_MESSAGES[tier]);
+    el.resultTitle.textContent = pickRandom(tList(`messages.result.${tier}`));
   }
 
   el.resultHighscoreMsg.classList.toggle('hidden', !isNewHighscore);
   el.resultUnlockMsg.classList.toggle('hidden', !unlockedNextStage);
   if (unlockedNextStage) {
     const nextDifficulty = DIFFICULTIES[DIFFICULTIES.indexOf(state.roundDifficulty) + 1];
-    el.resultUnlockMsg.textContent = `🔓 Stufe "${DIFFICULTY_LABELS[nextDifficulty]}" freigeschaltet!`;
+    el.resultUnlockMsg.textContent = t('ui.unlockedStage', { stage: t(`difficulty.${nextDifficulty}`) });
   }
 
   el.resultSkinMsg.classList.toggle('hidden', !newlyUnlockedSkin);
   if (newlyUnlockedSkin) {
-    el.resultSkinMsg.textContent = `🎁 Neuer Koala-Skin freigeschaltet: ${SKINS[newlyUnlockedSkin].label}!`;
+    el.resultSkinMsg.textContent = t('ui.newSkinUnlocked', { skin: t(`skin.${newlyUnlockedSkin}.label`) });
   }
 
   if (milestone || newlyUnlockedSkin) {
@@ -1957,6 +1968,8 @@ function renderResult({ isNewHighscore, unlockedNextStage, milestone, heartsDepl
 }
 
 async function init() {
+  applyStaticTranslations();
+  checkPasswordGate();
   const response = await fetch('data/countries.json');
   state.allCountries = await response.json();
   renderStartScreen();

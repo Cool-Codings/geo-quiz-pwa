@@ -8,15 +8,48 @@
   <meta name="theme-color" content="#FFD93D" />
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
-  <link rel="apple-touch-icon" href="icons/icon.svg" />
+  <link rel="apple-touch-icon" href="icons/icon-180.png" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
+
+  <!-- Passwort-Sperre -->
+  <div class="modal-overlay hidden" id="password-overlay">
+    <div class="modal-card">
+      <div class="mascot-stack">
+        <img class="mascot-img" src="assets/mascot/koala-idle.svg" alt="" width="90" height="90" />
+      </div>
+      <h1 id="password-title" data-i18n="password.title">🔒 Passwort erforderlich</h1>
+      <input type="password" id="password-input" class="duel-name-input" autocomplete="off" data-i18n-placeholder="password.placeholder" placeholder="Passwort eingeben" />
+      <p id="password-error" class="password-error hidden"></p>
+      <label class="password-remember-label">
+        <input type="checkbox" id="password-remember" />
+        <span id="password-remember-text" data-i18n="password.remember">Passwort merken</span>
+      </label>
+      <button id="btn-password-submit" class="btn-primary" type="button" data-i18n="password.submit"></button>
+    </div>
+  </div>
+
+  <!-- Einstellungen -->
+  <div class="modal-overlay hidden" id="settings-overlay">
+    <div class="modal-card">
+      <h1 id="settings-title" data-i18n="ui.settingsTitle">⚙️ Einstellungen</h1>
+      <p class="settings-language-label" id="settings-language-label" data-i18n="ui.settingsLanguageLabel">Sprache</p>
+      <div class="settings-language-list" id="settings-language-list">
+        <button class="settings-lang-btn" data-lang="de" type="button">Deutsch</button>
+        <button class="settings-lang-btn" data-lang="en" type="button">English</button>
+        <button class="settings-lang-btn" data-lang="it" type="button">Italiano</button>
+      </div>
+      <button id="btn-settings-done" class="btn-primary" type="button" data-i18n="ui.settingsDone"></button>
+    </div>
+  </div>
+
   <div class="app">
 
     <!-- Start-Bildschirm -->
     <section id="screen-start" class="screen">
       <div class="card">
+        <button class="settings-gear-btn" id="btn-settings-open" type="button" data-i18n-aria="ui.settingsButtonLabel" aria-label="Einstellungen öffnen">⚙️</button>
         <div class="mascot-area">
           <div class="streak-badge hidden" id="streak-badge">🔥 <span id="streak-count">0</span> Tage in Folge!</div>
           <div class="speech-bubble" id="start-bubble">Hallo! Schön, dass du da bist!</div>
@@ -25,8 +58,8 @@
             <img class="mascot-accessory hidden" id="start-mascot-accessory" alt="" width="140" height="140" />
           </div>
         </div>
-        <h1>Geo-Quiz</h1>
-        <p class="subtitle">Wie gut kennst du dich auf der Welt aus?</p>
+        <h1 id="app-title" data-i18n="ui.appTitle">Geo-Quiz</h1>
+        <p class="subtitle" id="start-subtitle" data-i18n="ui.subtitle">Wie gut kennst du dich auf der Welt aus?</p>
 
         <div class="hearts-badge" id="start-hearts">
           <span class="heart-icon" data-heart="0">❤️</span>
@@ -35,83 +68,83 @@
           <span class="hearts-regen-hint hidden" id="hearts-regen-hint"></span>
         </div>
 
-        <h2 class="mode-title">🎨 Deine Koala-Sammlung:</h2>
+        <h2 class="mode-title" id="skin-collection-title" data-i18n="ui.skinCollectionTitle">🎨 Deine Koala-Sammlung:</h2>
         <div class="skin-collection" id="skin-collection"></div>
 
-        <h2 class="mode-title">Wähle einen Modus:</h2>
+        <h2 class="mode-title" id="mode-title-main" data-i18n="ui.modeTitle">Wähle einen Modus:</h2>
         <div class="mode-list" id="mode-list">
           <button class="mode-btn" data-mode="hauptstaedte">
             <span class="mode-emoji">🏛️</span>
-            <span class="mode-name">Hauptstädte</span>
+            <span class="mode-name" data-i18n="tile.hauptstaedte">Hauptstädte</span>
           </button>
           <button class="mode-btn" data-mode="laender">
             <span class="mode-emoji">🗺️</span>
-            <span class="mode-name">Länder</span>
+            <span class="mode-name" data-i18n="tile.laender">Länder</span>
           </button>
           <button class="mode-btn" data-mode="staedte">
             <span class="mode-emoji">🏙️</span>
-            <span class="mode-name">Städte</span>
+            <span class="mode-name" data-i18n="tile.staedte">Städte</span>
           </button>
           <button class="mode-btn" data-mode="fluesse">
             <span class="mode-emoji">🌊</span>
-            <span class="mode-name">Flüsse</span>
+            <span class="mode-name" data-i18n="tile.fluesse">Flüsse</span>
           </button>
           <button class="mode-btn" data-mode="flaggen">
             <span class="mode-emoji">🚩</span>
-            <span class="mode-name">Flaggen</span>
+            <span class="mode-name" data-i18n="tile.flaggen">Flaggen</span>
           </button>
           <button class="mode-btn" data-mode="karte">
             <span class="mode-emoji">🧭</span>
-            <span class="mode-name">Karte</span>
+            <span class="mode-name" data-i18n="tile.karte">Karte</span>
           </button>
           <button class="mode-btn" data-mode="umriss">
             <span class="mode-emoji">🗻</span>
-            <span class="mode-name">Umrisse</span>
+            <span class="mode-name" data-i18n="tile.umriss">Umrisse</span>
           </button>
           <button class="mode-btn" data-mode="nachbarn">
             <span class="mode-emoji">🤝</span>
-            <span class="mode-name">Nachbarn</span>
+            <span class="mode-name" data-i18n="tile.nachbarn">Nachbarn</span>
           </button>
           <button class="mode-btn" data-mode="kontinente">
             <span class="mode-emoji">🌐</span>
-            <span class="mode-name">Kontinente</span>
+            <span class="mode-name" data-i18n="tile.kontinente">Kontinente</span>
           </button>
           <button class="mode-btn" data-mode="puzzle">
             <span class="mode-emoji">🧩</span>
-            <span class="mode-name">Puzzle</span>
+            <span class="mode-name" data-i18n="tile.puzzle">Puzzle</span>
           </button>
           <button class="mode-btn" data-mode="duell">
             <span class="mode-emoji">⚔️</span>
-            <span class="mode-name">Duell</span>
+            <span class="mode-name" data-i18n="tile.duell">Duell</span>
           </button>
         </div>
 
         <div class="karte-submodes hidden" id="karte-submodes">
-          <button class="karte-submode-btn" data-mode="karte-laender">🌍 Länder finden</button>
-          <button class="karte-submode-btn" data-mode="karte-staedte">📍 Städte finden</button>
+          <button class="karte-submode-btn" data-mode="karte-laender" data-i18n="submode.karteLaender">🌍 Länder finden</button>
+          <button class="karte-submode-btn" data-mode="karte-staedte" data-i18n="submode.karteStaedte">📍 Städte finden</button>
         </div>
 
         <div class="highscore-box">
-          🏆 Highscore <span id="start-mode-label">Hauptstädte</span>: <span id="start-highscore">0</span>
+          🏆 <span id="start-highscore-word" data-i18n="ui.highscoreWord">Highscore</span> <span id="start-mode-label">Hauptstädte</span>: <span id="start-highscore">0</span>
         </div>
 
-        <h2 class="difficulty-title">Wähle eine Stufe:</h2>
+        <h2 class="difficulty-title" id="difficulty-title-main" data-i18n="ui.difficultyTitle">Wähle eine Stufe:</h2>
         <div class="difficulty-list" id="difficulty-list">
           <button class="difficulty-btn" data-difficulty="leicht">
             <span class="difficulty-emoji">🟢</span>
-            <span class="difficulty-name">Leicht</span>
+            <span class="difficulty-name" data-i18n="difficulty.leicht">Leicht</span>
           </button>
           <button class="difficulty-btn" data-difficulty="mittel">
             <span class="difficulty-emoji">🟡</span>
-            <span class="difficulty-name">Mittel</span>
+            <span class="difficulty-name" data-i18n="difficulty.mittel">Mittel</span>
           </button>
           <button class="difficulty-btn" data-difficulty="schwer">
             <span class="difficulty-emoji">🔴</span>
-            <span class="difficulty-name">Schwer</span>
+            <span class="difficulty-name" data-i18n="difficulty.schwer">Schwer</span>
           </button>
         </div>
 
-        <button id="btn-start" class="btn-primary">🚀 Spiel starten</button>
+        <button id="btn-start" class="btn-primary" data-i18n="ui.startButton">🚀 Spiel starten</button>
       </div>
     </section>
 
@@ -156,8 +189,8 @@
         <div class="map-wrap hidden" id="map-wrap">
           <div class="map-container" id="map-container"></div>
           <div class="map-zoom-controls">
-            <button class="map-zoom-btn" id="map-zoom-in" aria-label="Karte vergrößern" type="button">+</button>
-            <button class="map-zoom-btn" id="map-zoom-out" aria-label="Karte verkleinern" type="button">−</button>
+            <button class="map-zoom-btn" id="map-zoom-in" data-i18n-aria="ui.mapZoomIn" aria-label="Karte vergrößern" type="button">+</button>
+            <button class="map-zoom-btn" id="map-zoom-out" data-i18n-aria="ui.mapZoomOut" aria-label="Karte verkleinern" type="button">−</button>
           </div>
         </div>
 
@@ -166,12 +199,12 @@
             <div class="kontinente-chip" id="kontinente-chip">Land</div>
           </div>
           <div class="kontinente-zones" id="kontinente-zones">
-            <div class="kontinente-zone" data-continent="Europa"><span>🏰</span>Europa</div>
-            <div class="kontinente-zone" data-continent="Asien"><span>🏯</span>Asien</div>
-            <div class="kontinente-zone" data-continent="Afrika"><span>🦁</span>Afrika</div>
-            <div class="kontinente-zone" data-continent="Nordamerika"><span>🦅</span>Nordamerika</div>
-            <div class="kontinente-zone" data-continent="Suedamerika"><span>🌴</span>Südamerika</div>
-            <div class="kontinente-zone" data-continent="Ozeanien"><span>🐨</span>Ozeanien</div>
+            <div class="kontinente-zone" data-continent="Europa"><span>🏰</span><span class="kontinente-zone-label" data-i18n="continent.Europa">Europa</span></div>
+            <div class="kontinente-zone" data-continent="Asien"><span>🏯</span><span class="kontinente-zone-label" data-i18n="continent.Asien">Asien</span></div>
+            <div class="kontinente-zone" data-continent="Afrika"><span>🦁</span><span class="kontinente-zone-label" data-i18n="continent.Afrika">Afrika</span></div>
+            <div class="kontinente-zone" data-continent="Nordamerika"><span>🦅</span><span class="kontinente-zone-label" data-i18n="continent.Nordamerika">Nordamerika</span></div>
+            <div class="kontinente-zone" data-continent="Suedamerika"><span>🌴</span><span class="kontinente-zone-label" data-i18n="continent.Suedamerika">Südamerika</span></div>
+            <div class="kontinente-zone" data-continent="Ozeanien"><span>🐨</span><span class="kontinente-zone-label" data-i18n="continent.Ozeanien">Ozeanien</span></div>
           </div>
         </div>
       </div>
@@ -191,17 +224,17 @@
         <p class="result-mode-label" id="result-mode-label">Modus: Hauptstädte</p>
 
         <div class="result-stats">
-          <p class="result-score">Punkte: <span id="result-score">0</span></p>
-          <p class="result-correct"><span id="result-correct">0</span> von <span id="result-total">10</span> richtig</p>
+          <p class="result-score"><span id="result-score-word" data-i18n="ui.pointsWord">Punkte</span>: <span id="result-score">0</span></p>
+          <p class="result-correct" id="result-correct-line">0 von 10 richtig</p>
         </div>
 
-        <p id="result-highscore-msg" class="highscore-msg hidden">🏆 Neuer Highscore!</p>
+        <p id="result-highscore-msg" class="highscore-msg hidden" data-i18n="ui.newHighscore">🏆 Neuer Highscore!</p>
         <p id="result-unlock-msg" class="unlock-msg hidden">🔓 Nächste Stufe freigeschaltet!</p>
         <p id="result-skin-msg" class="unlock-msg hidden">🎁 Neuer Koala-Skin freigeschaltet!</p>
 
         <div class="result-buttons">
-          <button id="btn-again" class="btn-primary">🔁 Nochmal spielen</button>
-          <button id="btn-home" class="btn-secondary">🏠 Zum Start</button>
+          <button id="btn-again" class="btn-primary" data-i18n="ui.again">🔁 Nochmal spielen</button>
+          <button id="btn-home" class="btn-secondary" data-i18n="ui.home">🏠 Zum Start</button>
         </div>
       </div>
     </section>
@@ -212,70 +245,70 @@
         <div class="mascot-stack duel-setup-mascot">
           <img class="mascot-img mascot-float" src="assets/mascot/koala-idle.svg" alt="Koala-Maskottchen" width="90" height="90" />
         </div>
-        <h1>⚔️ Duell-Modus</h1>
-        <p class="subtitle">Zwei Spieler, ein Gerät - wer weiß mehr?</p>
+        <h1 id="duel-setup-title" data-i18n="duel.title">⚔️ Duell-Modus</h1>
+        <p class="subtitle" id="duel-setup-subtitle" data-i18n="duel.subtitle">Zwei Spieler, ein Gerät - wer weiß mehr?</p>
 
         <div class="duel-player-inputs">
           <label class="duel-player-label">
-            <span>👤 Spieler 1</span>
-            <input type="text" id="duel-player1-name" class="duel-name-input" placeholder="Spieler 1" maxlength="16" />
+            <span id="duel-player1-label" data-i18n="duel.player1Label">👤 Spieler 1</span>
+            <input type="text" id="duel-player1-name" class="duel-name-input" placeholder="Spieler 1" maxlength="16" data-i18n-placeholder="duel.player1Placeholder" />
           </label>
           <label class="duel-player-label">
-            <span>👤 Spieler 2</span>
-            <input type="text" id="duel-player2-name" class="duel-name-input" placeholder="Spieler 2" maxlength="16" />
+            <span id="duel-player2-label" data-i18n="duel.player2Label">👤 Spieler 2</span>
+            <input type="text" id="duel-player2-name" class="duel-name-input" placeholder="Spieler 2" maxlength="16" data-i18n-placeholder="duel.player2Placeholder" />
           </label>
         </div>
 
-        <h2 class="mode-title">Wähle einen Modus:</h2>
+        <h2 class="mode-title" id="mode-title-duel" data-i18n="ui.modeTitle">Wähle einen Modus:</h2>
         <div class="mode-list" id="duel-mode-list">
           <button class="mode-btn" data-mode="hauptstaedte">
             <span class="mode-emoji">🏛️</span>
-            <span class="mode-name">Hauptstädte</span>
+            <span class="mode-name" data-i18n="tile.hauptstaedte">Hauptstädte</span>
           </button>
           <button class="mode-btn" data-mode="laender">
             <span class="mode-emoji">🗺️</span>
-            <span class="mode-name">Länder</span>
+            <span class="mode-name" data-i18n="tile.laender">Länder</span>
           </button>
           <button class="mode-btn" data-mode="staedte">
             <span class="mode-emoji">🏙️</span>
-            <span class="mode-name">Städte</span>
+            <span class="mode-name" data-i18n="tile.staedte">Städte</span>
           </button>
           <button class="mode-btn" data-mode="fluesse">
             <span class="mode-emoji">🌊</span>
-            <span class="mode-name">Flüsse</span>
+            <span class="mode-name" data-i18n="tile.fluesse">Flüsse</span>
           </button>
           <button class="mode-btn" data-mode="flaggen">
             <span class="mode-emoji">🚩</span>
-            <span class="mode-name">Flaggen</span>
+            <span class="mode-name" data-i18n="tile.flaggen">Flaggen</span>
           </button>
           <button class="mode-btn" data-mode="karte-laender">
             <span class="mode-emoji">🌍</span>
-            <span class="mode-name">Karte: Länder</span>
+            <span class="mode-name" data-i18n="mode.karte-laender">Karte: Länder finden</span>
           </button>
           <button class="mode-btn" data-mode="karte-staedte">
             <span class="mode-emoji">📍</span>
-            <span class="mode-name">Karte: Städte</span>
+            <span class="mode-name" data-i18n="mode.karte-staedte">Karte: Städte finden</span>
           </button>
         </div>
 
-        <h2 class="difficulty-title">Wähle eine Stufe:</h2>
+        <h2 class="difficulty-title" id="difficulty-title-duel" data-i18n="ui.difficultyTitle">Wähle eine Stufe:</h2>
         <div class="difficulty-list" id="duel-difficulty-list">
           <button class="difficulty-btn" data-difficulty="leicht">
             <span class="difficulty-emoji">🟢</span>
-            <span class="difficulty-name">Leicht</span>
+            <span class="difficulty-name" data-i18n="difficulty.leicht">Leicht</span>
           </button>
           <button class="difficulty-btn" data-difficulty="mittel">
             <span class="difficulty-emoji">🟡</span>
-            <span class="difficulty-name">Mittel</span>
+            <span class="difficulty-name" data-i18n="difficulty.mittel">Mittel</span>
           </button>
           <button class="difficulty-btn" data-difficulty="schwer">
             <span class="difficulty-emoji">🔴</span>
-            <span class="difficulty-name">Schwer</span>
+            <span class="difficulty-name" data-i18n="difficulty.schwer">Schwer</span>
           </button>
         </div>
 
-        <button id="btn-duel-start" class="btn-primary">⚔️ Duell starten</button>
-        <button id="btn-duel-setup-back" class="btn-secondary">🏠 Zurück</button>
+        <button id="btn-duel-start" class="btn-primary" data-i18n="duel.startButton">⚔️ Duell starten</button>
+        <button id="btn-duel-setup-back" class="btn-secondary" data-i18n="duel.backButton">🏠 Zurück</button>
       </div>
     </section>
 
@@ -285,9 +318,9 @@
         <div class="mascot-stack duel-setup-mascot">
           <img class="mascot-img mascot-float" id="duel-handoff-mascot" src="assets/mascot/koala-happy.svg" alt="Koala-Maskottchen" width="130" height="130" />
         </div>
-        <h1>Runde geschafft! 🎉</h1>
+        <h1 id="duel-handoff-title" data-i18n="duel.handoffTitle">Runde geschafft! 🎉</h1>
         <p class="duel-handoff-text" id="duel-handoff-text">Gib das Gerät an Spieler 2 weiter!</p>
-        <button id="btn-duel-handoff-continue" class="btn-primary">▶️ Bereit? Los geht's!</button>
+        <button id="btn-duel-handoff-continue" class="btn-primary" data-i18n="duel.handoffContinue">▶️ Bereit? Los geht's!</button>
       </div>
     </section>
 
@@ -297,12 +330,12 @@
         <div class="mascot-stack duel-setup-mascot">
           <img class="mascot-img mascot-float" id="puzzle-mascot" src="assets/mascot/koala-idle.svg" alt="Koala-Maskottchen" width="80" height="80" />
         </div>
-        <h1>🧩 Weltkarten-Puzzle</h1>
-        <p class="subtitle">Ziehe die Kontinente an die richtige Stelle!</p>
+        <h1 id="puzzle-title" data-i18n="puzzle.title">🧩 Weltkarten-Puzzle</h1>
+        <p class="subtitle" id="puzzle-subtitle" data-i18n="puzzle.subtitle">Ziehe die Kontinente an die richtige Stelle!</p>
 
         <div class="puzzle-stats">
           <span class="puzzle-timer" id="puzzle-timer">⏱️ 0:00</span>
-          <span class="puzzle-besttime hidden" id="puzzle-besttime-label">🏆 Bestzeit: <span id="puzzle-besttime">-</span></span>
+          <span class="puzzle-besttime hidden" id="puzzle-besttime-label">🏆 <span id="puzzle-besttime-word" data-i18n="puzzle.bestTimeLabelWord">Bestzeit</span>: <span id="puzzle-besttime">-</span></span>
         </div>
 
         <div class="puzzle-board-wrap">
@@ -312,7 +345,7 @@
           </svg>
         </div>
 
-        <button id="btn-puzzle-home" class="btn-secondary">🏠 Zum Start</button>
+        <button id="btn-puzzle-home" class="btn-secondary" data-i18n="ui.home">🏠 Zum Start</button>
       </div>
     </section>
 
@@ -326,13 +359,13 @@
           </div>
           <div class="confetti-layer" id="puzzle-confetti-layer"></div>
         </div>
-        <h1>🎉 Puzzle geschafft!</h1>
+        <h1 id="puzzle-result-title" data-i18n="puzzle.resultTitle">🎉 Puzzle geschafft!</h1>
         <p class="result-stats" id="puzzle-result-time">Zeit: 0:00</p>
-        <p id="puzzle-result-best" class="highscore-msg hidden">🏆 Neue Bestzeit!</p>
+        <p id="puzzle-result-best" class="highscore-msg hidden" data-i18n="puzzle.resultBest">🏆 Neue Bestzeit!</p>
 
         <div class="result-buttons">
-          <button id="btn-puzzle-again" class="btn-primary">🔁 Nochmal puzzeln</button>
-          <button id="btn-puzzle-home2" class="btn-secondary">🏠 Zum Start</button>
+          <button id="btn-puzzle-again" class="btn-primary" data-i18n="puzzle.again">🔁 Nochmal puzzeln</button>
+          <button id="btn-puzzle-home2" class="btn-secondary" data-i18n="ui.home">🏠 Zum Start</button>
         </div>
       </div>
     </section>
@@ -365,14 +398,15 @@
         </div>
 
         <div class="result-buttons">
-          <button id="btn-duel-again" class="btn-primary">🔁 Nochmal duellieren</button>
-          <button id="btn-duel-home" class="btn-secondary">🏠 Zum Start</button>
+          <button id="btn-duel-again" class="btn-primary" data-i18n="duel.again">🔁 Nochmal duellieren</button>
+          <button id="btn-duel-home" class="btn-secondary" data-i18n="ui.home">🏠 Zum Start</button>
         </div>
       </div>
     </section>
 
   </div>
 
+  <script src="js/i18n.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

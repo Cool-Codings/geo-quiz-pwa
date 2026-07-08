@@ -1,6 +1,7 @@
 # Geo-Quiz
 
 Eine Lern-PWA für Kinder (7-12 Jahre) zum Üben von Ländern und Hauptstädten.
+**Version 1.0** — alle geplanten Features sind umgesetzt.
 
 ## Aktueller Stand
 
@@ -163,8 +164,44 @@ Internet/Server nötig):
   im Duell-Modus (noch) nicht zur Auswahl, da sie kein Zeitlimit/Punkte-pro-
   Frage-Format nutzen.
 
-Noch nicht umgesetzt: Mehrsprachigkeit, Passwortschutz, finale
-Design-Politur/Icons.
+**Mehrsprachigkeit** (🇩🇪 Deutsch / 🇬🇧 English / 🇮🇹 Italiano): über das
+Zahnrad-Symbol auf dem Start-Bildschirm erreichbar. Alle UI-Texte, Fragen-
+Formulierungen, Koala-Sprüche, Ergebnis-Meldungen und Fehlermeldungen liegen
+als Übersetzungs-Wörterbuch in `js/i18n.js` (`I18N`-Objekt, drei Sprachen,
+`t(key, vars)`-Hilfsfunktion mit `{platzhalter}`-Ersetzung). Länder-,
+Hauptstadt-, Stadt- und Flussnamen werden pro Sprache in `countries.json`
+gepflegt (`country_en`/`country_it` usw. neben den deutschen Basisfeldern,
+mit Fallback auf Deutsch wenn eine Übersetzung fehlt) und über
+`localizedField()` konsistent in allen Modi verwendet — Multiple-Choice-
+Distraktoren, Antwort-Abgleich und angezeigter Text nutzen dieselbe Sprache.
+Die gewählte Sprache wird in `localStorage` gespeichert und bleibt nach
+Neuladen erhalten; Standardsprache beim ersten Start ist Deutsch.
+
+**Passwortschutz**: Beim Laden erscheint ein Modal mit Passwortabfrage
+(Standard-Passwort im Code leicht obfuskiert als Zeichencode-Array, kein
+echtes Backend — reicht für Familien-/Freundeskreis-Nutzung, analog zur
+Schwester-PWA). Eine "Passwort merken"-Checkbox speichert einen erfolgreichen
+Login in `localStorage`, sodass das Passwort nicht bei jedem Öffnen erneut
+eingegeben werden muss.
+
+**Design & Übergänge**: Alle Bildschirme nutzen durchgängig dieselben
+`.card`/`.btn-primary`/`.btn-secondary`-Bausteine und Farbvariablen; beim
+Ausbau der elf Modi entstandene Inkonsistenzen (z. B. abweichende
+Kachel-Beschriftungen für den Karte-Modus im Duell-Setup) wurden
+vereinheitlicht. Ein sanfter Fade-/Slide-Übergang (`@keyframes
+screen-fade-in`) läuft beim Wechsel zwischen Bildschirmen automatisch mit,
+respektiert aber `prefers-reduced-motion`.
+
+**App-Icons**: rundes, farbenfrohes Icon-Set im Illustrationsstil des Koala-
+Maskottchens (Koala-Kopf vor einem Globus, `icons/icon.svg` +
+`icons/icon-maskable.svg` als Quellen, dazu vorgerenderte PNGs in 180/192/512 px
+für iOS-Homescreen, Android und Standard-Manifest-Icons).
+
+## Noch nicht umgesetzt
+
+Keine offenen Punkte aus der ursprünglichen Planung — mögliche zukünftige
+Ideen (nicht Teil von Version 1.0): weitere Sprachen, zusätzliche Länder/
+Regionen, Online-Mehrspieler.
 
 ## Lokal starten
 
@@ -182,13 +219,14 @@ Danach im Browser `http://localhost:8080` (bzw. den entsprechenden Port) öffnen
 ## Projektstruktur
 
 ```
-index.html          Grundgerüst mit Start-, Quiz-, Ergebnis-, Puzzle- und Duell-Bildschirmen
-css/style.css        Kindgerechtes, buntes Design
-js/app.js             Spiellogik (Fragen, Timer, Scoring, Fortschritt, Maskottchen, Streak, Karte, Herzen, Skins, Umrisse, Nachbarn, Kontinente-Drag&Drop, Puzzle, Duell-Modus)
-data/countries.json   Länder, Hauptstädte, größte Städte, Flüsse, Koordinaten, Kontinent, Flächenfilter, Nachbarländer je Land
+index.html          Grundgerüst mit Start-, Quiz-, Ergebnis-, Puzzle-, Duell-Bildschirmen + Einstellungs-/Passwort-Modals
+css/style.css        Kindgerechtes, buntes Design, Screen-Übergänge
+js/i18n.js            Übersetzungs-Wörterbuch (DE/EN/IT) + t()/tList()/localizedField()-Hilfsfunktionen
+js/app.js             Spiellogik (Fragen, Timer, Scoring, Fortschritt, Maskottchen, Streak, Karte, Herzen, Skins, Umrisse, Nachbarn, Kontinente-Drag&Drop, Puzzle, Duell-Modus, Sprachumschaltung, Passwortschutz)
+data/countries.json   Länder, Hauptstädte, größte Städte, Flüsse, Koordinaten, Kontinent, Flächenfilter, Nachbarländer je Land (+ EN/IT-Übersetzungen)
 manifest.json         PWA-Manifest
-sw.js                 Service Worker (Offline-Caching, inkl. Flaggen, Maskottchen, Accessoires und Weltkarte)
-icons/                App-Icons (SVG)
+sw.js                 Service Worker (Offline-Caching, inkl. Flaggen, Maskottchen, Accessoires, Weltkarte und App-Icons)
+icons/                App-Icons: Koala-vor-Globus-Motiv (SVG-Quellen + vorgerenderte PNGs)
 assets/flags/          Flaggen-SVGs (flag-icons, MIT-Lizenz)
 assets/mascot/          Koala-Maskottchen in 4 Posen (SVG, eigene Illustration)
 assets/mascot/accessories/  Freischaltbare Skin-Overlays (Hut, Sonnenbrille, Schal, Krone)
