@@ -6,6 +6,10 @@
   --color-purple: #9b5de5;
   --color-teal: #4ecdc4;
   --color-red: #ef476f;
+  --color-indigo: #5c6bc0;
+  --color-peach: #ffa45b;
+  --color-mint: #6bcb77;
+  --color-rose: #ff8fab;
   --color-text: #2b2b3d;
   --radius-lg: 28px;
   --radius-md: 18px;
@@ -264,6 +268,10 @@ h1 {
 .mode-btn[data-mode="karte-laender"] { background: var(--color-sun); color: #4a3b00; }
 .mode-btn[data-mode="karte-staedte"] { background: var(--color-sun); color: #4a3b00; }
 .mode-btn[data-mode="duell"] { background: var(--color-red); }
+.mode-btn[data-mode="umriss"] { background: var(--color-indigo); }
+.mode-btn[data-mode="nachbarn"] { background: var(--color-peach); color: #4a2c00; }
+.mode-btn[data-mode="kontinente"] { background: var(--color-mint); color: #123018; }
+.mode-btn[data-mode="puzzle"] { background: var(--color-rose); color: #5a0a24; }
 
 .mode-btn.selected {
   border-color: var(--color-text);
@@ -681,6 +689,108 @@ h1 {
   transition: fill 0.15s ease;
 }
 
+.map-container svg.silhouette-active .country {
+  fill: transparent;
+  stroke: none;
+  pointer-events: none;
+}
+
+.map-container svg.silhouette-active .country.silhouette-target {
+  fill: var(--color-purple);
+  stroke: #6a3fc7;
+  stroke-width: 1.5;
+}
+
+/* Kontinente-Zuordnung (Drag & Drop) */
+
+.kontinente-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.kontinente-chip-stage {
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.kontinente-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 140px;
+  padding: 14px 22px;
+  border-radius: 999px;
+  background: var(--color-mint);
+  color: #123018;
+  font-size: 1.15rem;
+  font-weight: bold;
+  box-shadow: var(--shadow-soft);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.kontinente-chip.dragging {
+  cursor: grabbing;
+  box-shadow: 0 14px 20px rgba(0, 0, 0, 0.25);
+  transform: scale(1.06);
+}
+
+@keyframes chip-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-10px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-6px); }
+  80% { transform: translateX(4px); }
+}
+
+.kontinente-chip.chip-shake {
+  animation: chip-shake 400ms ease-in-out;
+}
+
+.kontinente-zones {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.kontinente-zone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 68px;
+  border-radius: var(--radius-md);
+  border: 3px dashed #cfd6ee;
+  background: #f4f6ff;
+  color: var(--color-text);
+  font-weight: bold;
+  font-size: 0.95rem;
+  text-align: center;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.kontinente-zone span {
+  font-size: 1.4rem;
+}
+
+.kontinente-zone.zone-correct {
+  background: var(--color-grass);
+  border-color: var(--color-grass);
+  border-style: solid;
+  color: #fff;
+}
+
+.kontinente-zone.zone-wrong {
+  background: var(--color-red);
+  border-color: var(--color-red);
+  border-style: solid;
+  color: #fff;
+}
+
 .map-city-marker {
   stroke: #fff;
   stroke-width: 1.5;
@@ -881,6 +991,91 @@ h1 {
 .duel-vs {
   font-size: 1.4rem;
   flex-shrink: 0;
+}
+
+/* Puzzle-Modus */
+
+.puzzle-stats {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-weight: bold;
+  margin: 10px 0 16px;
+}
+
+.puzzle-timer {
+  background: #f4f6ff;
+  border-radius: 999px;
+  padding: 6px 14px;
+}
+
+.puzzle-besttime {
+  background: var(--color-sun);
+  color: #4a3b00;
+  border-radius: 999px;
+  padding: 6px 14px;
+}
+
+.puzzle-board-wrap {
+  width: 100%;
+  aspect-ratio: 480 / 340;
+  border-radius: var(--radius-md);
+  border: 3px solid #eef0f8;
+  background: #eaf6ff;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.puzzle-board {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.puzzle-zone {
+  fill: #ffffff;
+  stroke: #b9c8d8;
+  stroke-width: 2;
+  stroke-dasharray: 6 5;
+}
+
+.puzzle-zone-label {
+  font-size: 20px;
+  text-anchor: middle;
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.puzzle-piece {
+  cursor: grab;
+}
+
+.puzzle-piece.dragging {
+  cursor: grabbing;
+}
+
+.puzzle-piece.placed {
+  cursor: default;
+}
+
+.puzzle-piece-shape {
+  stroke: #fff;
+  stroke-width: 2;
+  filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.15));
+}
+
+.puzzle-piece.piece-na .puzzle-piece-shape { fill: var(--color-purple); }
+.puzzle-piece.piece-sa .puzzle-piece-shape { fill: var(--color-grass); }
+.puzzle-piece.piece-eu .puzzle-piece-shape { fill: var(--color-sky); }
+.puzzle-piece.piece-af .puzzle-piece-shape { fill: var(--color-sun); }
+.puzzle-piece.piece-as .puzzle-piece-shape { fill: var(--color-coral); }
+.puzzle-piece.piece-oc .puzzle-piece-shape { fill: var(--color-teal); }
+
+.puzzle-piece-label {
+  font-size: 22px;
+  text-anchor: middle;
+  pointer-events: none;
 }
 
 @media (max-width: 360px) {

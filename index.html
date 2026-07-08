@@ -64,6 +64,22 @@
             <span class="mode-emoji">🧭</span>
             <span class="mode-name">Karte</span>
           </button>
+          <button class="mode-btn" data-mode="umriss">
+            <span class="mode-emoji">🗻</span>
+            <span class="mode-name">Umrisse</span>
+          </button>
+          <button class="mode-btn" data-mode="nachbarn">
+            <span class="mode-emoji">🤝</span>
+            <span class="mode-name">Nachbarn</span>
+          </button>
+          <button class="mode-btn" data-mode="kontinente">
+            <span class="mode-emoji">🌐</span>
+            <span class="mode-name">Kontinente</span>
+          </button>
+          <button class="mode-btn" data-mode="puzzle">
+            <span class="mode-emoji">🧩</span>
+            <span class="mode-name">Puzzle</span>
+          </button>
           <button class="mode-btn" data-mode="duell">
             <span class="mode-emoji">⚔️</span>
             <span class="mode-name">Duell</span>
@@ -112,7 +128,7 @@
         <span class="heart-icon" data-heart="2">❤️</span>
       </div>
 
-      <div class="timer-wrap">
+      <div class="timer-wrap" id="timer-wrap">
         <div class="timer-bar" id="timer-bar"></div>
       </div>
       <div class="timer-number" id="timer-number">15</div>
@@ -142,6 +158,20 @@
           <div class="map-zoom-controls">
             <button class="map-zoom-btn" id="map-zoom-in" aria-label="Karte vergrößern" type="button">+</button>
             <button class="map-zoom-btn" id="map-zoom-out" aria-label="Karte verkleinern" type="button">−</button>
+          </div>
+        </div>
+
+        <div class="kontinente-wrap hidden" id="kontinente-wrap">
+          <div class="kontinente-chip-stage" id="kontinente-chip-stage">
+            <div class="kontinente-chip" id="kontinente-chip">Land</div>
+          </div>
+          <div class="kontinente-zones" id="kontinente-zones">
+            <div class="kontinente-zone" data-continent="Europa"><span>🏰</span>Europa</div>
+            <div class="kontinente-zone" data-continent="Asien"><span>🏯</span>Asien</div>
+            <div class="kontinente-zone" data-continent="Afrika"><span>🦁</span>Afrika</div>
+            <div class="kontinente-zone" data-continent="Nordamerika"><span>🦅</span>Nordamerika</div>
+            <div class="kontinente-zone" data-continent="Suedamerika"><span>🌴</span>Südamerika</div>
+            <div class="kontinente-zone" data-continent="Ozeanien"><span>🐨</span>Ozeanien</div>
           </div>
         </div>
       </div>
@@ -258,6 +288,52 @@
         <h1>Runde geschafft! 🎉</h1>
         <p class="duel-handoff-text" id="duel-handoff-text">Gib das Gerät an Spieler 2 weiter!</p>
         <button id="btn-duel-handoff-continue" class="btn-primary">▶️ Bereit? Los geht's!</button>
+      </div>
+    </section>
+
+    <!-- Puzzle-Modus -->
+    <section id="screen-puzzle" class="screen hidden">
+      <div class="card">
+        <div class="mascot-stack duel-setup-mascot">
+          <img class="mascot-img mascot-float" id="puzzle-mascot" src="assets/mascot/koala-idle.svg" alt="Koala-Maskottchen" width="80" height="80" />
+        </div>
+        <h1>🧩 Weltkarten-Puzzle</h1>
+        <p class="subtitle">Ziehe die Kontinente an die richtige Stelle!</p>
+
+        <div class="puzzle-stats">
+          <span class="puzzle-timer" id="puzzle-timer">⏱️ 0:00</span>
+          <span class="puzzle-besttime hidden" id="puzzle-besttime-label">🏆 Bestzeit: <span id="puzzle-besttime">-</span></span>
+        </div>
+
+        <div class="puzzle-board-wrap">
+          <svg class="puzzle-board" id="puzzle-board" viewBox="-40 -40 480 340">
+            <g id="puzzle-zones"></g>
+            <g id="puzzle-pieces"></g>
+          </svg>
+        </div>
+
+        <button id="btn-puzzle-home" class="btn-secondary">🏠 Zum Start</button>
+      </div>
+    </section>
+
+    <!-- Puzzle: Erfolg -->
+    <section id="screen-puzzle-result" class="screen hidden">
+      <div class="card">
+        <div class="result-mascot-wrap">
+          <div class="mascot-stack">
+            <img class="mascot-img" id="puzzle-result-mascot" src="assets/mascot/koala-excited.svg" alt="Koala-Maskottchen" width="140" height="140" />
+            <img class="mascot-accessory hidden" id="puzzle-result-mascot-accessory" alt="" width="140" height="140" />
+          </div>
+          <div class="confetti-layer" id="puzzle-confetti-layer"></div>
+        </div>
+        <h1>🎉 Puzzle geschafft!</h1>
+        <p class="result-stats" id="puzzle-result-time">Zeit: 0:00</p>
+        <p id="puzzle-result-best" class="highscore-msg hidden">🏆 Neue Bestzeit!</p>
+
+        <div class="result-buttons">
+          <button id="btn-puzzle-again" class="btn-primary">🔁 Nochmal puzzeln</button>
+          <button id="btn-puzzle-home2" class="btn-secondary">🏠 Zum Start</button>
+        </div>
       </div>
     </section>
 

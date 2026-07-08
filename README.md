@@ -4,8 +4,8 @@ Eine Lern-PWA für Kinder (7-12 Jahre) zum Üben von Ländern und Hauptstädten.
 
 ## Aktueller Stand
 
-Sieben spielbare Quiz-Modi, wählbar auf dem Start-Bildschirm, sowie ein
-lokaler 2-Spieler-Duell-Modus (siehe eigener Abschnitt unten):
+Elf spielbare Modi, wählbar auf dem Start-Bildschirm, sowie ein lokaler
+2-Spieler-Duell-Modus (siehe eigener Abschnitt unten):
 
 - **Hauptstädte**: "Wie heißt die Hauptstadt von [Land]?"
 - **Länder**: mischt beide Richtungen — Land→Hauptstadt und Hauptstadt→Land
@@ -14,6 +14,10 @@ lokaler 2-Spieler-Duell-Modus (siehe eigener Abschnitt unten):
 - **Flaggen**: Flagge wird angezeigt, Antwortoptionen sind Ländernamen
 - **Karte**: interaktive Weltkarte statt Multiple-Choice-Buttons, mit zwei Untermodi
   ("Länder finden" / "Städte finden"), siehe eigener Abschnitt unten
+- **Umrisse**: isolierter Länder-Umriss statt Text/Flagge, siehe eigener Abschnitt unten
+- **Nachbarn**: "Welches Land grenzt an [Land]?", siehe eigener Abschnitt unten
+- **Kontinente**: Drag & Drop statt Multiple-Choice, siehe eigener Abschnitt unten
+- **Puzzle**: entspanntes Kontinente-Weltkarten-Puzzle, siehe eigener Abschnitt unten
 
 Gemeinsame Spiellogik aller Modi:
 
@@ -91,14 +95,56 @@ Koala-Posen sitzen. Freischaltung anhand persistenter Lifetime-Statistiken
 Streak). Auf dem Start-Bildschirm wählbar; gesperrte Skins erscheinen
 ausgegraut mit Schloss-Symbol und Freischalt-Hinweis.
 
+**Umrisse-Modus**: zeigt nur die isolierte, zentrierte Silhouette eines
+Landes — technisch dieselben Länder-Pfade wie im Karte-Modus
+(`assets/map/world-map.svg`), nur auf eine Bounding-Box um das gesuchte Land
+gezoomt, alle anderen Länder-Pfade transparent geschaltet. Antwort per
+Multiple-Choice mit 4 Ländernamen wie bei den Text-Modi (Zeitlimit, Scoring,
+eigener Highscore, gleiche Distraktor-Logik). Nur `mapEligible`-Länder
+stehen zur Auswahl, da nur diese eine für dieses Format brauchbar präzise
+Kartenform besitzen.
+
+**Nachbarn-Modus**: "Welches Land grenzt an [Land]?" mit 4 Ländernamen zur
+Auswahl, davon genau ein echter Landnachbar (keine Wassergrenzen). Jedes
+Land in `countries.json` hat dafür ein `neighbors`-Array mit den
+ISO-3166-1-alpha-2-Codes seiner echten Nachbarländer, beschränkt auf
+Nachbarn, die auch im 60-Länder-Datensatz vorkommen. Die drei Distraktoren
+werden so gewählt, dass sie selbst keine echten Nachbarn des gefragten
+Landes sind — es gibt also immer genau eine richtige Antwort. Länder ohne
+Nachbarn im Datensatz (z. B. Inselstaaten wie Japan oder Sri Lanka) tauchen
+in diesem Modus nicht als Frage auf.
+
+**Kontinente-Zuordnung**: statt Multiple-Choice wird ein Länderchip per
+Drag & Drop (Pointer Events, funktioniert mit Maus und Touch) auf eine von
+6 beschrifteten Kontinent-Zonen gezogen. Kein Zeitlimit — bei einer falschen
+Zuordnung springt der Chip zurück, der Koala gibt einen aufmunternden
+Hinweis, und dasselbe Land kann beliebig oft erneut versucht werden. Punkte
+gibt es nur für richtige Zuordnungen (volle Punktzahl beim ersten Versuch,
+reduzierte Punktzahl bei einem späteren Versuch); für die
+Freischalt-Fortschritt-Schwelle zählt nur die Erstversuch-Trefferquote.
+Nutzt ansonsten dieselbe Highscore-/Freischalt-Infrastruktur wie die
+anderen Modi.
+
+**Puzzle-Modus** (🧩, rein explorativ, kein Punktesystem): eine stark
+vereinfachte Weltkarte aus 6 großen, proportional zueinander platzierten
+Kontinent-Teilen (abgeleitet aus denselben `CONTINENT_REGIONS`, die auch der
+Karte-Modus für den Kontinent-Zoom nutzt), die per Drag & Drop auf eine
+leere, gestrichelte Umriss-Vorlage gezogen werden. Bei ausreichender Nähe
+zur richtigen Position (großzügiger Toleranz-Radius) rastet ein Teil fest
+ein. Die Zeit wird gestoppt; nach Abschluss aller 6 Teile zeigt ein
+Erfolgs-Bildschirm mit Koala-Konfetti-Feier die benötigte Zeit und
+aktualisiert bei Bedarf die in `localStorage` gespeicherte Bestzeit
+(`geoquiz-puzzle-besttime`). Es gibt keine Schwierigkeitsstufen und kein
+Zeitlimit — nur ein einziges, immer gleiches Puzzle zum entspannten Üben.
+
 **Duell-Modus** (⚔️, lokales 2-Spieler-Hot-Seat-Spiel am selben Gerät, kein
 Internet/Server nötig):
 
 - Eigene Kachel "Duell" auf dem Start-Bildschirm führt zu einem Einrichtungs-
   Bildschirm: Namen für Spieler 1/2 eintragen (Vorgabe "Spieler 1"/"Spieler 2",
-  überschreibbar), dann Modus (alle sieben Quiz-/Karten-Modi stehen zur
-  Auswahl) und Schwierigkeit wählen — beide Spieler bekommen denselben Modus
-  und dieselbe Schwierigkeit.
+  überschreibbar), dann Modus (alle Quiz-/Karten-Modi mit Multiple-Choice
+  stehen zur Auswahl) und Schwierigkeit wählen — beide Spieler bekommen
+  denselben Modus und dieselbe Schwierigkeit.
 - Spieler 1 spielt eine komplette Runde (10 Fragen) mit dem regulären
   Quiz-Bildschirm. Die Fragen (inkl. Reihenfolge und Distraktoren) werden
   einmalig erzeugt und für beide Spieler unverändert wiederverwendet, damit
@@ -113,10 +159,12 @@ Internet/Server nötig):
 - Der Duell-Modus teilt sich den Quiz-Bildschirm mit dem Solo-Spiel, greift
   aber **nicht** in Solo-Highscores, Streak, Herzen oder Lifetime-Statistiken
   ein — diese bleiben unverändert, unabhängig davon, wie oft und wie
-  erfolgreich ein Duell gespielt wird.
+  erfolgreich ein Duell gespielt wird. Kontinente-Zuordnung und Puzzle stehen
+  im Duell-Modus (noch) nicht zur Auswahl, da sie kein Zeitlimit/Punkte-pro-
+  Frage-Format nutzen.
 
-Noch nicht umgesetzt: Mehrsprachigkeit, Kontinente-Zuordnung-Modus,
-Puzzle-Modus, Länder-Umriss-Rätsel, Nachbarländer-Spiel.
+Noch nicht umgesetzt: Mehrsprachigkeit, Passwortschutz, finale
+Design-Politur/Icons.
 
 ## Lokal starten
 
@@ -134,10 +182,10 @@ Danach im Browser `http://localhost:8080` (bzw. den entsprechenden Port) öffnen
 ## Projektstruktur
 
 ```
-index.html          Grundgerüst mit Start-, Quiz-, Ergebnis- und Duell-Bildschirmen
+index.html          Grundgerüst mit Start-, Quiz-, Ergebnis-, Puzzle- und Duell-Bildschirmen
 css/style.css        Kindgerechtes, buntes Design
-js/app.js             Spiellogik (Fragen, Timer, Scoring, Fortschritt, Maskottchen, Streak, Karte, Herzen, Skins, Duell-Modus)
-data/countries.json   Länder, Hauptstädte, größte Städte, Flüsse, Koordinaten, Kontinent, Flächenfilter je Land
+js/app.js             Spiellogik (Fragen, Timer, Scoring, Fortschritt, Maskottchen, Streak, Karte, Herzen, Skins, Umrisse, Nachbarn, Kontinente-Drag&Drop, Puzzle, Duell-Modus)
+data/countries.json   Länder, Hauptstädte, größte Städte, Flüsse, Koordinaten, Kontinent, Flächenfilter, Nachbarländer je Land
 manifest.json         PWA-Manifest
 sw.js                 Service Worker (Offline-Caching, inkl. Flaggen, Maskottchen, Accessoires und Weltkarte)
 icons/                App-Icons (SVG)
