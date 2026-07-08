@@ -64,6 +64,10 @@
             <span class="mode-emoji">🧭</span>
             <span class="mode-name">Karte</span>
           </button>
+          <button class="mode-btn" data-mode="duell">
+            <span class="mode-emoji">⚔️</span>
+            <span class="mode-name">Duell</span>
+          </button>
         </div>
 
         <div class="karte-submodes hidden" id="karte-submodes">
@@ -168,6 +172,125 @@
         <div class="result-buttons">
           <button id="btn-again" class="btn-primary">🔁 Nochmal spielen</button>
           <button id="btn-home" class="btn-secondary">🏠 Zum Start</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Duell: Einrichtung -->
+    <section id="screen-duel-setup" class="screen hidden">
+      <div class="card">
+        <div class="mascot-stack duel-setup-mascot">
+          <img class="mascot-img mascot-float" src="assets/mascot/koala-idle.svg" alt="Koala-Maskottchen" width="90" height="90" />
+        </div>
+        <h1>⚔️ Duell-Modus</h1>
+        <p class="subtitle">Zwei Spieler, ein Gerät - wer weiß mehr?</p>
+
+        <div class="duel-player-inputs">
+          <label class="duel-player-label">
+            <span>👤 Spieler 1</span>
+            <input type="text" id="duel-player1-name" class="duel-name-input" placeholder="Spieler 1" maxlength="16" />
+          </label>
+          <label class="duel-player-label">
+            <span>👤 Spieler 2</span>
+            <input type="text" id="duel-player2-name" class="duel-name-input" placeholder="Spieler 2" maxlength="16" />
+          </label>
+        </div>
+
+        <h2 class="mode-title">Wähle einen Modus:</h2>
+        <div class="mode-list" id="duel-mode-list">
+          <button class="mode-btn" data-mode="hauptstaedte">
+            <span class="mode-emoji">🏛️</span>
+            <span class="mode-name">Hauptstädte</span>
+          </button>
+          <button class="mode-btn" data-mode="laender">
+            <span class="mode-emoji">🗺️</span>
+            <span class="mode-name">Länder</span>
+          </button>
+          <button class="mode-btn" data-mode="staedte">
+            <span class="mode-emoji">🏙️</span>
+            <span class="mode-name">Städte</span>
+          </button>
+          <button class="mode-btn" data-mode="fluesse">
+            <span class="mode-emoji">🌊</span>
+            <span class="mode-name">Flüsse</span>
+          </button>
+          <button class="mode-btn" data-mode="flaggen">
+            <span class="mode-emoji">🚩</span>
+            <span class="mode-name">Flaggen</span>
+          </button>
+          <button class="mode-btn" data-mode="karte-laender">
+            <span class="mode-emoji">🌍</span>
+            <span class="mode-name">Karte: Länder</span>
+          </button>
+          <button class="mode-btn" data-mode="karte-staedte">
+            <span class="mode-emoji">📍</span>
+            <span class="mode-name">Karte: Städte</span>
+          </button>
+        </div>
+
+        <h2 class="difficulty-title">Wähle eine Stufe:</h2>
+        <div class="difficulty-list" id="duel-difficulty-list">
+          <button class="difficulty-btn" data-difficulty="leicht">
+            <span class="difficulty-emoji">🟢</span>
+            <span class="difficulty-name">Leicht</span>
+          </button>
+          <button class="difficulty-btn" data-difficulty="mittel">
+            <span class="difficulty-emoji">🟡</span>
+            <span class="difficulty-name">Mittel</span>
+          </button>
+          <button class="difficulty-btn" data-difficulty="schwer">
+            <span class="difficulty-emoji">🔴</span>
+            <span class="difficulty-name">Schwer</span>
+          </button>
+        </div>
+
+        <button id="btn-duel-start" class="btn-primary">⚔️ Duell starten</button>
+        <button id="btn-duel-setup-back" class="btn-secondary">🏠 Zurück</button>
+      </div>
+    </section>
+
+    <!-- Duell: Übergabe an Spieler 2 -->
+    <section id="screen-duel-handoff" class="screen hidden">
+      <div class="card">
+        <div class="mascot-stack duel-setup-mascot">
+          <img class="mascot-img mascot-float" id="duel-handoff-mascot" src="assets/mascot/koala-happy.svg" alt="Koala-Maskottchen" width="130" height="130" />
+        </div>
+        <h1>Runde geschafft! 🎉</h1>
+        <p class="duel-handoff-text" id="duel-handoff-text">Gib das Gerät an Spieler 2 weiter!</p>
+        <button id="btn-duel-handoff-continue" class="btn-primary">▶️ Bereit? Los geht's!</button>
+      </div>
+    </section>
+
+    <!-- Duell: Ergebnis -->
+    <section id="screen-duel-result" class="screen hidden">
+      <div class="card">
+        <div class="result-mascot-wrap">
+          <div class="mascot-stack">
+            <img class="mascot-img" id="duel-result-mascot" src="assets/mascot/koala-happy.svg" alt="Koala-Maskottchen" width="140" height="140" />
+            <img class="mascot-accessory hidden" id="duel-result-mascot-accessory" alt="" width="140" height="140" />
+          </div>
+          <div class="confetti-layer" id="duel-confetti-layer"></div>
+        </div>
+        <h1 id="duel-winner-text">🏆 Spieler 1 gewinnt!</h1>
+        <p class="result-mode-label" id="duel-sub-message"></p>
+
+        <div class="duel-scoreboard">
+          <div class="duel-player-card" id="duel-card-1">
+            <span class="duel-player-name" id="duel-name-1">Spieler 1</span>
+            <span class="duel-player-score" id="duel-score-1">0</span>
+            <span class="duel-player-correct" id="duel-correct-1">0 von 10 richtig</span>
+          </div>
+          <div class="duel-vs">⚔️</div>
+          <div class="duel-player-card" id="duel-card-2">
+            <span class="duel-player-name" id="duel-name-2">Spieler 2</span>
+            <span class="duel-player-score" id="duel-score-2">0</span>
+            <span class="duel-player-correct" id="duel-correct-2">0 von 10 richtig</span>
+          </div>
+        </div>
+
+        <div class="result-buttons">
+          <button id="btn-duel-again" class="btn-primary">🔁 Nochmal duellieren</button>
+          <button id="btn-duel-home" class="btn-secondary">🏠 Zum Start</button>
         </div>
       </div>
     </section>

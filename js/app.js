@@ -291,15 +291,18 @@ const screens = {
   start: document.getElementById('screen-start'),
   quiz: document.getElementById('screen-quiz'),
   result: document.getElementById('screen-result'),
+  duelSetup: document.getElementById('screen-duel-setup'),
+  duelHandoff: document.getElementById('screen-duel-handoff'),
+  duelResult: document.getElementById('screen-duel-result'),
 };
 
 const el = {
-  modeButtons: Array.from(document.querySelectorAll('.mode-btn')),
+  modeButtons: Array.from(document.querySelectorAll('#mode-list .mode-btn')),
   karteSubmodes: document.getElementById('karte-submodes'),
   karteSubmodeButtons: Array.from(document.querySelectorAll('.karte-submode-btn')),
   startModeLabel: document.getElementById('start-mode-label'),
   startHighscore: document.getElementById('start-highscore'),
-  difficultyButtons: Array.from(document.querySelectorAll('.difficulty-btn')),
+  difficultyButtons: Array.from(document.querySelectorAll('#difficulty-list .difficulty-btn')),
   btnStart: document.getElementById('btn-start'),
   startMascot: document.getElementById('start-mascot'),
   startMascotAccessory: document.getElementById('start-mascot-accessory'),
@@ -311,6 +314,7 @@ const el = {
 
   quizProgress: document.getElementById('quiz-progress'),
   quizScore: document.getElementById('quiz-score'),
+  quizHeartsRow: document.getElementById('quiz-hearts'),
   quizHeartIcons: Array.from(document.querySelectorAll('#quiz-hearts .heart-icon')),
   timerBar: document.getElementById('timer-bar'),
   timerNumber: document.getElementById('timer-number'),
@@ -340,6 +344,33 @@ const el = {
   confettiLayer: document.getElementById('confetti-layer'),
   btnAgain: document.getElementById('btn-again'),
   btnHome: document.getElementById('btn-home'),
+
+  duelPlayer1Input: document.getElementById('duel-player1-name'),
+  duelPlayer2Input: document.getElementById('duel-player2-name'),
+  duelModeButtons: Array.from(document.querySelectorAll('#duel-mode-list .mode-btn')),
+  duelDifficultyButtons: Array.from(document.querySelectorAll('#duel-difficulty-list .difficulty-btn')),
+  btnDuelStart: document.getElementById('btn-duel-start'),
+  btnDuelSetupBack: document.getElementById('btn-duel-setup-back'),
+
+  duelHandoffText: document.getElementById('duel-handoff-text'),
+  duelHandoffMascot: document.getElementById('duel-handoff-mascot'),
+  btnDuelHandoffContinue: document.getElementById('btn-duel-handoff-continue'),
+
+  duelWinnerText: document.getElementById('duel-winner-text'),
+  duelSubMessage: document.getElementById('duel-sub-message'),
+  duelCard1: document.getElementById('duel-card-1'),
+  duelCard2: document.getElementById('duel-card-2'),
+  duelName1: document.getElementById('duel-name-1'),
+  duelName2: document.getElementById('duel-name-2'),
+  duelScore1: document.getElementById('duel-score-1'),
+  duelScore2: document.getElementById('duel-score-2'),
+  duelCorrect1: document.getElementById('duel-correct-1'),
+  duelCorrect2: document.getElementById('duel-correct-2'),
+  duelResultMascot: document.getElementById('duel-result-mascot'),
+  duelResultMascotAccessory: document.getElementById('duel-result-mascot-accessory'),
+  duelConfettiLayer: document.getElementById('duel-confetti-layer'),
+  btnDuelAgain: document.getElementById('btn-duel-again'),
+  btnDuelHome: document.getElementById('btn-duel-home'),
 };
 
 const state = {
@@ -360,6 +391,12 @@ const state = {
   mapView: { x: 0, y: 0, w: MAP_WIDTH, h: MAP_HEIGHT },
   mapBaseView: { x: 0, y: 0, w: MAP_WIDTH, h: MAP_HEIGHT },
   mapAnimHandle: null,
+  isDuel: false,
+  duelSetup: {
+    mode: 'hauptstaedte',
+    difficulty: 'leicht',
+  },
+  duel: null,
 };
 
 // Transient multi-touch gesture bookkeeping for the map (pan + pinch-zoom).
@@ -693,6 +730,10 @@ el.modeButtons.forEach((btn) => {
       renderStartScreen();
       return;
     }
+    if (btn.dataset.mode === 'duell') {
+      showDuelSetup();
+      return;
+    }
     state.selectedMode = btn.dataset.mode;
     state.selectedDifficulty = 'leicht';
     state.karteSubmodesOpen = false;
@@ -732,6 +773,7 @@ function buildQuestions(modeId, difficulty) {
 }
 
 function startRound(modeId, difficulty) {
+  state.isDuel = false;
   state.roundMode = modeId;
   state.roundDifficulty = difficulty;
   state.questions = buildQuestions(modeId, difficulty);
@@ -743,14 +785,184 @@ function startRound(modeId, difficulty) {
   showQuestion();
 }
 
+// --- Duell-Modus (lokal, 2 Spieler am selben Gerät) ---
+// Reuses the normal solo quiz screen/flow (showQuestion, handleAnswer,
+// finishAnswer, timer, map click handling) for both players' turns via the
+// `state.isDuel` flag, so hearts/highscore/streak/skin side effects - which
+// only ever fire from the solo endRound() path - stay completely untouched.
+
+function showDuelSetup() {
+  renderDuelSetup();
+  showScreen('duelSetup');
+}
+
+function renderDuelSetup() {
+  el.duelModeButtons.forEach((btn) => {
+    btn.classList.toggle('selected', btn.dataset.mode === state.duelSetup.mode);
+  });
+  el.duelDifficultyButtons.forEach((btn) => {
+    btn.classList.toggle('selected', btn.dataset.difficulty === state.duelSetup.difficulty);
+  });
+}
+
+el.duelModeButtons.forEach((btn) => {
+  btn.addEventListener('click', () => {
+    state.duelSetup.mode = btn.dataset.mode;
+    renderDuelSetup();
+  });
+});
+
+el.duelDifficultyButtons.forEach((btn) => {
+  btn.addEventListener('click', () => {
+    state.duelSetup.difficulty = btn.dataset.difficulty;
+    renderDuelSetup();
+  });
+});
+
+el.btnDuelSetupBack.addEventListener('click', () => {
+  renderStartScreen();
+  refreshStartMascot();
+  showScreen('start');
+});
+
+el.btnDuelStart.addEventListener('click', () => {
+  const name1 = el.duelPlayer1Input.value.trim() || el.duelPlayer1Input.placeholder;
+  const name2 = el.duelPlayer2Input.value.trim() || el.duelPlayer2Input.placeholder;
+  startDuel(state.duelSetup.mode, state.duelSetup.difficulty, name1, name2);
+});
+
+function startDuel(modeId, difficulty, player1Name, player2Name) {
+  state.isDuel = true;
+  state.duel = {
+    mode: modeId,
+    difficulty,
+    player1Name,
+    player2Name,
+    currentPlayer: 1,
+    player1Score: 0,
+    player1Correct: 0,
+    player2Score: 0,
+    player2Correct: 0,
+  };
+
+  state.roundMode = modeId;
+  state.roundDifficulty = difficulty;
+  // Both players answer the exact same questions in the exact same order,
+  // built once here, so the comparison at the end is fair.
+  state.questions = buildQuestions(modeId, difficulty);
+  state.currentIndex = 0;
+  state.score = 0;
+  state.correctCount = 0;
+
+  showScreen('quiz');
+  showQuestion();
+}
+
+function endDuelLeg() {
+  if (state.duel.currentPlayer === 1) {
+    state.duel.player1Score = state.score;
+    state.duel.player1Correct = state.correctCount;
+    state.duel.currentPlayer = 2;
+    showDuelHandoff();
+  } else {
+    state.duel.player2Score = state.score;
+    state.duel.player2Correct = state.correctCount;
+    showDuelResult();
+  }
+}
+
+function showDuelHandoff() {
+  el.duelHandoffText.textContent = `Gib das Gerät an ${state.duel.player2Name} weiter!`;
+  setMascotPose(el.duelHandoffMascot, 'happy', 'mascot-pop');
+  showScreen('duelHandoff');
+}
+
+el.btnDuelHandoffContinue.addEventListener('click', () => {
+  state.currentIndex = 0;
+  state.score = 0;
+  state.correctCount = 0;
+  showScreen('quiz');
+  showQuestion();
+});
+
+const DUEL_WIN_MESSAGES = ['Klasse gemacht! 🌟', 'Starke Leistung! 👏', 'Wow, richtig gut! 🎉'];
+const DUEL_CONSOLATION_MESSAGES = [
+  "Super gespielt! Beim nächsten Mal klappt's bestimmt! 💪",
+  'Toller Einsatz! Weiter so! 🌈',
+  'Gut gemacht - übe weiter und du holst auf! 🌱',
+];
+const DUEL_TIE_MESSAGES = [
+  '🤝 Unentschieden! Ihr seid beide Geo-Champions!',
+  '🤝 Gleichstand! Klasse gemacht, ihr beide!',
+];
+
+function showDuelResult() {
+  const { player1Name, player2Name, player1Score, player2Score, player1Correct, player2Correct } = state.duel;
+  const total = state.questions.length;
+
+  el.duelName1.textContent = player1Name;
+  el.duelName2.textContent = player2Name;
+  el.duelScore1.textContent = player1Score;
+  el.duelScore2.textContent = player2Score;
+  el.duelCorrect1.textContent = `${player1Correct} von ${total} richtig`;
+  el.duelCorrect2.textContent = `${player2Correct} von ${total} richtig`;
+
+  const isTie = player1Score === player2Score;
+  el.duelCard1.classList.toggle('winner', !isTie && player1Score > player2Score);
+  el.duelCard2.classList.toggle('winner', !isTie && player2Score > player1Score);
+
+  let pose;
+  if (isTie) {
+    el.duelWinnerText.textContent = pickRandom(DUEL_TIE_MESSAGES);
+    el.duelSubMessage.textContent = 'Ihr kennt euch beide super mit der Welt aus!';
+    pose = 'happy';
+  } else {
+    const winnerName = player1Score > player2Score ? player1Name : player2Name;
+    const loserName = player1Score > player2Score ? player2Name : player1Name;
+    el.duelWinnerText.textContent = `🏆 ${winnerName} gewinnt! ${pickRandom(DUEL_WIN_MESSAGES)}`;
+    el.duelSubMessage.textContent = `${loserName}: ${pickRandom(DUEL_CONSOLATION_MESSAGES)}`;
+    pose = 'excited';
+  }
+
+  el.duelResultMascot.src = MASCOT_SRC[pose];
+  el.duelResultMascot.classList.remove('mascot-pop');
+  void el.duelResultMascot.offsetWidth;
+  el.duelResultMascot.classList.add('mascot-pop');
+  applySkinToMascot(el.duelResultMascotAccessory);
+
+  if (!isTie) {
+    launchConfetti(el.duelConfettiLayer);
+  }
+
+  showScreen('duelResult');
+}
+
+el.btnDuelAgain.addEventListener('click', () => {
+  startDuel(state.duel.mode, state.duel.difficulty, state.duel.player1Name, state.duel.player2Name);
+});
+
+el.btnDuelHome.addEventListener('click', () => {
+  state.isDuel = false;
+  renderStartScreen();
+  refreshStartMascot();
+  showScreen('start');
+});
+
 function showQuestion() {
   state.answered = false;
   const question = state.questions[state.currentIndex];
 
-  el.quizProgress.textContent = `${MODES[state.roundMode].label} · Frage ${state.currentIndex + 1} von ${state.questions.length}`;
+  if (state.isDuel) {
+    const playerName = state.duel.currentPlayer === 1 ? state.duel.player1Name : state.duel.player2Name;
+    el.quizProgress.textContent = `${playerName} · Frage ${state.currentIndex + 1} von ${state.questions.length}`;
+    el.quizHeartsRow.classList.add('hidden');
+  } else {
+    el.quizProgress.textContent = `${MODES[state.roundMode].label} · Frage ${state.currentIndex + 1} von ${state.questions.length}`;
+    el.quizHeartsRow.classList.remove('hidden');
+    renderHearts();
+  }
   el.quizScore.textContent = state.score;
   el.questionLabel.textContent = question.promptLabel;
-  renderHearts();
 
   const isImagePrompt = question.promptType === 'image';
   const isMapPrompt = question.promptType === 'map-country' || question.promptType === 'map-city';
@@ -846,7 +1058,8 @@ function finishAnswer(isCorrect) {
     state.score += POINTS_PER_CORRECT[state.roundDifficulty];
     state.correctCount += 1;
     el.quizScore.textContent = state.score;
-  } else {
+  } else if (!state.isDuel) {
+    // Hearts are a solo-mode resource; the duel never spends or shows them.
     const heartsLeft = loseHeart();
     renderHearts();
     heartsDepleted = heartsLeft <= 0;
@@ -864,6 +1077,8 @@ function finishAnswer(isCorrect) {
     } else if (state.currentIndex + 1 < state.questions.length) {
       state.currentIndex += 1;
       showQuestion();
+    } else if (state.isDuel) {
+      endDuelLeg();
     } else {
       endRound({});
     }

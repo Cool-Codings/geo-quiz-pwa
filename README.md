@@ -4,7 +4,8 @@ Eine Lern-PWA für Kinder (7-12 Jahre) zum Üben von Ländern und Hauptstädten.
 
 ## Aktueller Stand
 
-Sechs spielbare Quiz-Modi, wählbar auf dem Start-Bildschirm:
+Sieben spielbare Quiz-Modi, wählbar auf dem Start-Bildschirm, sowie ein
+lokaler 2-Spieler-Duell-Modus (siehe eigener Abschnitt unten):
 
 - **Hauptstädte**: "Wie heißt die Hauptstadt von [Land]?"
 - **Länder**: mischt beide Richtungen — Land→Hauptstadt und Hauptstadt→Land
@@ -90,8 +91,32 @@ Koala-Posen sitzen. Freischaltung anhand persistenter Lifetime-Statistiken
 Streak). Auf dem Start-Bildschirm wählbar; gesperrte Skins erscheinen
 ausgegraut mit Schloss-Symbol und Freischalt-Hinweis.
 
-Noch nicht umgesetzt: Mehrsprachigkeit, 2-Spieler-Modus, Kontinente-Zuordnung-
-Modus, Puzzle-Modus.
+**Duell-Modus** (⚔️, lokales 2-Spieler-Hot-Seat-Spiel am selben Gerät, kein
+Internet/Server nötig):
+
+- Eigene Kachel "Duell" auf dem Start-Bildschirm führt zu einem Einrichtungs-
+  Bildschirm: Namen für Spieler 1/2 eintragen (Vorgabe "Spieler 1"/"Spieler 2",
+  überschreibbar), dann Modus (alle sieben Quiz-/Karten-Modi stehen zur
+  Auswahl) und Schwierigkeit wählen — beide Spieler bekommen denselben Modus
+  und dieselbe Schwierigkeit.
+- Spieler 1 spielt eine komplette Runde (10 Fragen) mit dem regulären
+  Quiz-Bildschirm. Die Fragen (inkl. Reihenfolge und Distraktoren) werden
+  einmalig erzeugt und für beide Spieler unverändert wiederverwendet, damit
+  der Vergleich fair ist.
+- Danach erscheint ein Übergabe-Bildschirm ("Gib das Gerät an Spieler 2
+  weiter!") mit Bestätigungs-Button, bevor Spieler 2 dieselbe Fragenrunde
+  spielt.
+- Gemeinsamer Ergebnis-Bildschirm zeigt beide Punktzahlen nebeneinander und
+  hebt den Gewinner hervor (🏆); bei Gleichstand "Unentschieden!". Der Koala
+  reagiert passend: freudig für den Gewinner, aufmunternd für den Verlierer,
+  bei einem Unentschieden lobt er beide.
+- Der Duell-Modus teilt sich den Quiz-Bildschirm mit dem Solo-Spiel, greift
+  aber **nicht** in Solo-Highscores, Streak, Herzen oder Lifetime-Statistiken
+  ein — diese bleiben unverändert, unabhängig davon, wie oft und wie
+  erfolgreich ein Duell gespielt wird.
+
+Noch nicht umgesetzt: Mehrsprachigkeit, Kontinente-Zuordnung-Modus,
+Puzzle-Modus, Länder-Umriss-Rätsel, Nachbarländer-Spiel.
 
 ## Lokal starten
 
@@ -109,9 +134,9 @@ Danach im Browser `http://localhost:8080` (bzw. den entsprechenden Port) öffnen
 ## Projektstruktur
 
 ```
-index.html          Grundgerüst mit Start-, Quiz- und Ergebnis-Bildschirm
+index.html          Grundgerüst mit Start-, Quiz-, Ergebnis- und Duell-Bildschirmen
 css/style.css        Kindgerechtes, buntes Design
-js/app.js             Spiellogik (Fragen, Timer, Scoring, Fortschritt, Maskottchen, Streak, Karte, Herzen, Skins)
+js/app.js             Spiellogik (Fragen, Timer, Scoring, Fortschritt, Maskottchen, Streak, Karte, Herzen, Skins, Duell-Modus)
 data/countries.json   Länder, Hauptstädte, größte Städte, Flüsse, Koordinaten, Kontinent, Flächenfilter je Land
 manifest.json         PWA-Manifest
 sw.js                 Service Worker (Offline-Caching, inkl. Flaggen, Maskottchen, Accessoires und Weltkarte)
