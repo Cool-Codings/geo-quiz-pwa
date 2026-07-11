@@ -241,6 +241,7 @@ const MODES = {
         promptType: 'outline',
       });
       question.targetCode = entry.code;
+      question.targetContinent = entry.continent;
       return question;
     },
   },
@@ -273,6 +274,12 @@ const MODES = {
         promptType: 'text',
         options,
         correctIndex: options.indexOf(correctValue),
+        // Shows a small continent-scoped map with `entry` (the asked
+        // country, not the correct answer) highlighted, so the child can
+        // see it in its real geographic context alongside its neighbors.
+        showMapContext: true,
+        targetCode: entry.code,
+        targetContinent: entry.continent,
       };
     },
   },
@@ -361,6 +368,16 @@ const el = {
   btnSettingsOpen: document.getElementById('btn-settings-open'),
   btnSettingsDone: document.getElementById('btn-settings-done'),
   settingsLangButtons: Array.from(document.querySelectorAll('.settings-lang-btn')),
+
+  pauseOverlay: document.getElementById('pause-overlay'),
+  pauseMainView: document.getElementById('pause-main-view'),
+  pauseConfirmView: document.getElementById('pause-confirm-view'),
+  btnPause: document.getElementById('btn-pause'),
+  btnPausePuzzle: document.getElementById('btn-pause-puzzle'),
+  btnPauseResume: document.getElementById('btn-pause-resume'),
+  btnPauseCancel: document.getElementById('btn-pause-cancel'),
+  btnPauseConfirmYes: document.getElementById('btn-pause-confirm-yes'),
+  btnPauseConfirmNo: document.getElementById('btn-pause-confirm-no'),
 
   modeButtons: Array.from(document.querySelectorAll('#mode-list .mode-btn')),
   karteSubmodes: document.getElementById('karte-submodes'),
@@ -905,6 +922,72 @@ el.passwordInput.addEventListener('keydown', (evt) => {
   if (evt.key === 'Enter') submitPassword();
 });
 
+// --- Pause/Abbrechen ---
+// Works the same way for every mode that reaches it (all #screen-quiz-based
+// modes, including Duell and Karte, plus #screen-puzzle): pausing only ever
+// stops a running countdown/stopwatch interval without resetting it, so
+// resuming costs no time. Kontinente-Zuordnung has no timer at all, so
+// there's simply nothing to pause/resume there - the overlay still works
+// as a safe "give up" exit.
+
+function showPauseMainView() {
+  el.pauseMainView.classList.remove('hidden');
+  el.pauseConfirmView.classList.add('hidden');
+}
+
+function openPause() {
+  const puzzleActive = !screens.puzzle.classList.contains('hidden');
+  if (puzzleActive) {
+    if (state.puzzle && state.puzzle.timerHandle) {
+      clearInterval(state.puzzle.timerHandle);
+      state.puzzle.timerHandle = null;
+      state.puzzle.pausedAt = performance.now();
+    }
+  } else {
+    clearInterval(state.timerHandle);
+  }
+  showPauseMainView();
+  el.pauseOverlay.classList.remove('hidden');
+}
+
+function closePauseAndResume() {
+  el.pauseOverlay.classList.add('hidden');
+  const puzzleActive = !screens.puzzle.classList.contains('hidden');
+  if (puzzleActive) {
+    if (state.puzzle && state.puzzle.pausedAt != null) {
+      state.puzzle.startTime += performance.now() - state.puzzle.pausedAt;
+      state.puzzle.pausedAt = null;
+      resumePuzzleTimerInterval();
+    }
+  } else if (!el.timerWrap.classList.contains('hidden')) {
+    // Only modes that actually show/use the countdown (i.e. not
+    // Kontinente-Zuordnung, which hides it) need their timer resumed.
+    resumeTimerInterval();
+  }
+}
+
+function cancelRoundToStart() {
+  clearInterval(state.timerHandle);
+  if (state.puzzle) clearInterval(state.puzzle.timerHandle);
+  state.isDuel = false;
+  state.duel = null;
+  el.pauseOverlay.classList.add('hidden');
+  showPauseMainView();
+  renderStartScreen();
+  refreshStartMascot();
+  showScreen('start');
+}
+
+el.btnPause.addEventListener('click', openPause);
+el.btnPausePuzzle.addEventListener('click', openPause);
+el.btnPauseResume.addEventListener('click', closePauseAndResume);
+el.btnPauseCancel.addEventListener('click', () => {
+  el.pauseMainView.classList.add('hidden');
+  el.pauseConfirmView.classList.remove('hidden');
+});
+el.btnPauseConfirmYes.addEventListener('click', cancelRoundToStart);
+el.btnPauseConfirmNo.addEventListener('click', closePauseAndResume);
+
 el.modeButtons.forEach((btn) => {
   btn.addEventListener('click', () => {
     if (btn.dataset.mode === 'karte') {
@@ -1288,14 +1371,20 @@ function startPuzzle() {
     placed: new Set(),
     startTime: performance.now(),
     timerHandle: null,
+    pausedAt: null,
   };
   updatePuzzleTimerDisplay(0);
-  state.puzzle.timerHandle = setInterval(() => {
-    updatePuzzleTimerDisplay((performance.now() - state.puzzle.startTime) / 1000);
-  }, 250);
+  resumePuzzleTimerInterval();
   renderPuzzleBestTime();
   el.puzzleMascot.src = MASCOT_SRC.idle;
   showScreen('puzzle');
+}
+
+function resumePuzzleTimerInterval() {
+  clearInterval(state.puzzle.timerHandle);
+  state.puzzle.timerHandle = setInterval(() => {
+    updatePuzzleTimerDisplay((performance.now() - state.puzzle.startTime) / 1000);
+  }, 250);
 }
 
 function formatPuzzleTime(seconds) {
@@ -1518,7 +1607,8 @@ function showQuestion() {
   const isImagePrompt = question.promptType === 'image';
   const isOutlinePrompt = question.promptType === 'outline';
   const isMapPrompt = question.promptType === 'map-country' || question.promptType === 'map-city';
-  const usesMapDisplay = isMapPrompt || isOutlinePrompt;
+  const showsMapContext = isOutlinePrompt || question.showMapContext === true;
+  const usesMapDisplay = isMapPrompt || showsMapContext;
 
   el.questionSubject.classList.toggle('hidden', isImagePrompt || isOutlinePrompt);
   el.questionFlag.classList.toggle('hidden', !isImagePrompt);
@@ -1532,7 +1622,7 @@ function showQuestion() {
   el.kontinenteWrap.classList.add('hidden');
   el.timerWrap.classList.remove('hidden');
   el.timerNumber.classList.remove('hidden');
-  resetMapSilhouette();
+  resetMapContext();
   if (isMapPrompt) {
     clearMapHighlights();
     mapGesture.pointers.clear();
@@ -1540,11 +1630,11 @@ function showQuestion() {
     const baseView = getContinentView(question.targetContinent);
     state.mapBaseView = baseView;
     setMapView(baseView, { animate: true });
-  } else if (isOutlinePrompt) {
+  } else if (showsMapContext) {
     clearMapHighlights();
     mapGesture.pointers.clear();
     mapGesture.mode = 'idle';
-    showCountrySilhouette(question.targetCode);
+    showCountryInContinentContext(question.targetCode, question.targetContinent);
   }
   if (!isMapPrompt) {
     el.answerButtons.forEach((btn, i) => {
@@ -1567,11 +1657,19 @@ function showQuestion() {
 function startTimer(seconds) {
   clearInterval(state.timerHandle);
   state.timeLeft = seconds;
+  state.timerTotal = seconds;
   updateTimerDisplay(seconds, seconds);
+  resumeTimerInterval();
+}
 
+// Restarts the countdown interval from whatever `state.timeLeft` currently
+// holds (rather than resetting it), so pausing and resuming doesn't cost
+// the player any time.
+function resumeTimerInterval() {
+  clearInterval(state.timerHandle);
   state.timerHandle = setInterval(() => {
     state.timeLeft -= 1;
-    updateTimerDisplay(state.timeLeft, seconds);
+    updateTimerDisplay(state.timeLeft, state.timerTotal);
     if (state.timeLeft <= 0) {
       clearInterval(state.timerHandle);
       handleTimeout();
@@ -1933,40 +2031,27 @@ function clearMapHighlights() {
   state.mapSvg.querySelectorAll('[data-map-marker]').forEach((node) => node.remove());
 }
 
-// --- Länder-Umriss-Rätsel: reuses the interactive map's own country paths,
-// just hidden/zoomed down to a single isolated silhouette instead of the
-// full clickable map.
+// --- Länder-Umriss-Rätsel & Nachbarländer-Kartenausschnitt: both reuse the
+// interactive map's own country paths, zoomed to the target country's
+// continent with every other country shown in a neutral gray and the
+// target country highlighted, so it's seen in its real geographic context
+// (with neighboring countries visible) instead of as a floating shape.
 
-function resetMapSilhouette() {
+function resetMapContext() {
   if (!state.mapSvg) return;
-  state.mapSvg.classList.remove('silhouette-active');
-  const prevTarget = state.mapSvg.querySelector('.silhouette-target');
-  if (prevTarget) prevTarget.classList.remove('silhouette-target');
+  state.mapSvg.classList.remove('map-context-active');
+  const prevTarget = state.mapSvg.querySelector('.map-context-target');
+  if (prevTarget) prevTarget.classList.remove('map-context-target');
 }
 
-function showCountrySilhouette(code) {
+function showCountryInContinentContext(code, continent) {
   if (!state.mapSvg) return;
   const targetPath = state.mapSvg.getElementById(code);
   if (!targetPath) return;
-  state.mapSvg.classList.add('silhouette-active');
-  targetPath.classList.add('silhouette-target');
+  state.mapSvg.classList.add('map-context-active');
+  targetPath.classList.add('map-context-target');
 
-  const bbox = targetPath.getBBox();
-  const padding = 0.6;
-  const minSize = 40;
-  let w = Math.max(bbox.width * (1 + padding * 2), minSize);
-  let h = Math.max(bbox.height * (1 + padding * 2), minSize);
-  const cx = bbox.x + bbox.width / 2;
-  const cy = bbox.y + bbox.height / 2;
-
-  const aspect = MAP_WIDTH / MAP_HEIGHT;
-  if (w / h > aspect) {
-    h = w / aspect;
-  } else {
-    w = h * aspect;
-  }
-
-  const view = clampMapView({ x: cx - w / 2, y: cy - h / 2, w, h });
+  const view = getContinentView(continent);
   state.mapBaseView = view;
   setMapView(view, { animate: true });
 }

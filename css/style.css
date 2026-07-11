@@ -639,6 +639,7 @@ h1 {
 
 .map-wrap {
   position: relative;
+  margin-bottom: 26px;
 }
 
 .map-container {
@@ -712,13 +713,18 @@ h1 {
   transition: fill 0.15s ease;
 }
 
-.map-container svg.silhouette-active .country {
-  fill: transparent;
-  stroke: none;
+.map-container svg.map-context-active .country {
+  fill: #c3cbdb;
+  stroke: #9aa5ba;
+  stroke-width: 0.6;
   pointer-events: none;
 }
 
-.map-container svg.silhouette-active .country.silhouette-target {
+.map-container svg.map-context-active .map-ocean {
+  fill: #eaf1fb;
+}
+
+.map-container svg.map-context-active .country.map-context-target {
   fill: var(--color-purple);
   stroke: #6a3fc7;
   stroke-width: 1.5;
@@ -1130,6 +1136,40 @@ h1 {
 
 #screen-start .card {
   position: relative;
+}
+
+.pause-icon-btn {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: none;
+  background: #fff;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: var(--shadow-soft);
+}
+
+.pause-icon-btn:active {
+  transform: translateY(3px);
+  box-shadow: none;
+}
+
+.card-with-pause {
+  position: relative;
+}
+
+.pause-icon-btn-corner {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  z-index: 5;
+}
+
+.pause-confirm-text {
+  margin: 4px 0 20px;
+  color: #666;
 }
 
 .modal-overlay {

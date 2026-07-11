@@ -44,6 +44,23 @@
     </div>
   </div>
 
+  <!-- Pause -->
+  <div class="modal-overlay hidden" id="pause-overlay">
+    <div class="modal-card">
+      <div id="pause-main-view">
+        <h1 data-i18n="pause.title">⏸️ Pause</h1>
+        <button id="btn-pause-resume" class="btn-primary" data-i18n="pause.resume">▶️ Weiterspielen</button>
+        <button id="btn-pause-cancel" class="btn-secondary" data-i18n="pause.cancel">🚪 Abbrechen</button>
+      </div>
+      <div id="pause-confirm-view" class="hidden">
+        <h1 data-i18n="pause.confirmTitle">Wirklich beenden?</h1>
+        <p class="pause-confirm-text" data-i18n="pause.confirmText">Der Fortschritt dieser Runde geht verloren.</p>
+        <button id="btn-pause-confirm-yes" class="btn-primary" data-i18n="pause.confirmYes">Ja, beenden</button>
+        <button id="btn-pause-confirm-no" class="btn-secondary" data-i18n="pause.confirmNo">Nein, weiterspielen</button>
+      </div>
+    </div>
+  </div>
+
   <div class="app">
 
     <!-- Start-Bildschirm -->
@@ -151,6 +168,7 @@
     <!-- Quiz-Bildschirm -->
     <section id="screen-quiz" class="screen hidden">
       <div class="quiz-header">
+        <button id="btn-pause" class="pause-icon-btn" type="button" data-i18n-aria="pause.buttonLabel" aria-label="Pause">⏸️</button>
         <div class="quiz-progress" id="quiz-progress">Frage 1 von 10</div>
         <div class="quiz-score">⭐ <span id="quiz-score">0</span></div>
       </div>
@@ -179,19 +197,19 @@
         <h2 class="question-subject" id="question-subject">Land</h2>
         <img class="question-flag hidden" id="question-flag" alt="Flagge des gesuchten Landes" />
 
-        <div class="answers-grid" id="answers-grid">
-          <button class="answer-btn" data-index="0"></button>
-          <button class="answer-btn" data-index="1"></button>
-          <button class="answer-btn" data-index="2"></button>
-          <button class="answer-btn" data-index="3"></button>
-        </div>
-
         <div class="map-wrap hidden" id="map-wrap">
           <div class="map-container" id="map-container"></div>
           <div class="map-zoom-controls">
             <button class="map-zoom-btn" id="map-zoom-in" data-i18n-aria="ui.mapZoomIn" aria-label="Karte vergrößern" type="button">+</button>
             <button class="map-zoom-btn" id="map-zoom-out" data-i18n-aria="ui.mapZoomOut" aria-label="Karte verkleinern" type="button">−</button>
           </div>
+        </div>
+
+        <div class="answers-grid" id="answers-grid">
+          <button class="answer-btn" data-index="0"></button>
+          <button class="answer-btn" data-index="1"></button>
+          <button class="answer-btn" data-index="2"></button>
+          <button class="answer-btn" data-index="3"></button>
         </div>
 
         <div class="kontinente-wrap hidden" id="kontinente-wrap">
@@ -326,7 +344,8 @@
 
     <!-- Puzzle-Modus -->
     <section id="screen-puzzle" class="screen hidden">
-      <div class="card">
+      <div class="card card-with-pause">
+        <button id="btn-pause-puzzle" class="pause-icon-btn pause-icon-btn-corner" type="button" data-i18n-aria="pause.buttonLabel" aria-label="Pause">⏸️</button>
         <div class="mascot-stack duel-setup-mascot">
           <img class="mascot-img mascot-float" id="puzzle-mascot" src="assets/mascot/koala-idle.svg" alt="Koala-Maskottchen" width="80" height="80" />
         </div>

@@ -198,6 +198,26 @@ Maskottchens (Koala-Kopf vor einem Globus, `icons/icon.svg` +
 `icons/icon-maskable.svg` als Quellen, dazu vorgerenderte PNGs in 180/192/512 px
 für iOS-Homescreen, Android und Standard-Manifest-Icons).
 
+**Pause/Abbrechen**: Ein Pause-Symbol oben im Quiz-Bildschirm (bei allen elf
+Modi, inkl. Duell und Karten-Modus sowie dem Puzzle) öffnet ein Overlay mit
+"Weiterspielen" und "Abbrechen". Während das Overlay offen ist, pausiert der
+Timer (bzw. die Puzzle-Stoppuhr) exakt an der aktuellen Stelle und läuft nach
+"Weiterspielen" ohne Zeitverlust weiter. "Abbrechen" fragt zur Sicherheit
+"Wirklich beenden?" nach, bevor die laufende Runde verworfen wird und es
+zurück zum Start-Bildschirm geht — bereits gespeicherte Highscores, Streaks
+und Lifetime-Statistiken bleiben davon unberührt, da eine abgebrochene Runde
+nie als abgeschlossen gewertet wird.
+
+**Länder-Umriss-Rätsel & Nachbarländer-Spiel — Kartenkontext**: Beide Modi
+zeigen das gesuchte bzw. gefragte Land nicht mehr isoliert, sondern
+eingebettet in seinen Kontinent: Die Karte zoomt auf den jeweiligen
+Kontinent, das Zielland ist farblich hervorgehoben, alle anderen Länder
+(inkl. Nachbarländer) erscheinen neutral-grau im Hintergrund. Die
+Antwort-Kacheln darunter nutzen durchgängig neutrale Farben (kein
+Rot/Grün vorab) — bei einer Fehlantwort blinkt kurz die richtige Kachel
+grün auf. Zwischen Kartendarstellung und Antwortbereich sorgt zusätzlicher
+Abstand für klare visuelle Trennung.
+
 ## Noch nicht umgesetzt
 
 Keine offenen Punkte aus der ursprünglichen Planung — mögliche zukünftige
