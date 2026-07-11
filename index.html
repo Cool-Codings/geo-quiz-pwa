@@ -65,30 +65,24 @@
 
     <!-- Start-Bildschirm -->
     <section id="screen-start" class="screen">
-      <div class="card">
+      <div class="card start-card">
         <button class="settings-gear-btn" id="btn-settings-open" type="button" data-i18n-aria="ui.settingsButtonLabel" aria-label="Einstellungen öffnen">⚙️</button>
-        <div class="mascot-area">
-          <div class="streak-badge hidden" id="streak-badge">🔥 <span id="streak-count">0</span> Tage in Folge!</div>
-          <div class="speech-bubble" id="start-bubble">Hallo! Schön, dass du da bist!</div>
-          <div class="mascot-stack">
-            <img class="mascot-img mascot-float" id="start-mascot" src="assets/mascot/koala-idle.svg" alt="Koala-Maskottchen" width="140" height="140" />
-            <img class="mascot-accessory hidden" id="start-mascot-accessory" alt="" width="140" height="140" />
-          </div>
-        </div>
+
         <h1 id="app-title" data-i18n="ui.appTitle">Geo-Quiz</h1>
-        <p class="subtitle" id="start-subtitle" data-i18n="ui.subtitle">Wie gut kennst du dich auf der Welt aus?</p>
+        <p class="subtitle" id="start-subtitle">Hallo! Schön, dass du da bist!</p>
 
-        <div class="hearts-badge" id="start-hearts">
-          <span class="heart-icon" data-heart="0">❤️</span>
-          <span class="heart-icon" data-heart="1">❤️</span>
-          <span class="heart-icon" data-heart="2">❤️</span>
-          <span class="hearts-regen-hint hidden" id="hearts-regen-hint"></span>
+        <div class="start-top-row">
+          <div class="hearts-badge" id="start-hearts">
+            <span class="heart-icon" data-heart="0">❤️</span>
+            <span class="heart-icon" data-heart="1">❤️</span>
+            <span class="heart-icon" data-heart="2">❤️</span>
+            <span class="hearts-regen-hint hidden" id="hearts-regen-hint"></span>
+          </div>
+          <div class="streak-badge hidden" id="streak-badge">🔥 <span id="streak-count">0</span> Tage in Folge!</div>
         </div>
 
-        <h2 class="mode-title" id="skin-collection-title" data-i18n="ui.skinCollectionTitle">🎨 Deine Koala-Sammlung:</h2>
         <div class="skin-collection" id="skin-collection"></div>
 
-        <h2 class="mode-title" id="mode-title-main" data-i18n="ui.modeTitle">Wähle einen Modus:</h2>
         <div class="mode-list" id="mode-list">
           <button class="mode-btn" data-mode="hauptstaedte">
             <span class="mode-emoji">🏛️</span>
@@ -130,6 +124,10 @@
             <span class="mode-emoji">🧩</span>
             <span class="mode-name" data-i18n="tile.puzzle">Puzzle</span>
           </button>
+          <button class="mode-btn" data-mode="berge">
+            <span class="mode-emoji">🏔️</span>
+            <span class="mode-name" data-i18n="tile.berge">Berge</span>
+          </button>
           <button class="mode-btn" data-mode="duell">
             <span class="mode-emoji">⚔️</span>
             <span class="mode-name" data-i18n="tile.duell">Duell</span>
@@ -145,7 +143,6 @@
           🏆 <span id="start-highscore-word" data-i18n="ui.highscoreWord">Highscore</span> <span id="start-mode-label">Hauptstädte</span>: <span id="start-highscore">0</span>
         </div>
 
-        <h2 class="difficulty-title" id="difficulty-title-main" data-i18n="ui.difficultyTitle">Wähle eine Stufe:</h2>
         <div class="difficulty-list" id="difficulty-list">
           <button class="difficulty-btn" data-difficulty="leicht">
             <span class="difficulty-emoji">🟢</span>
@@ -307,6 +304,10 @@
             <span class="mode-emoji">📍</span>
             <span class="mode-name" data-i18n="mode.karte-staedte">Karte: Städte finden</span>
           </button>
+          <button class="mode-btn" data-mode="berge">
+            <span class="mode-emoji">🏔️</span>
+            <span class="mode-name" data-i18n="tile.berge">Berge</span>
+          </button>
         </div>
 
         <h2 class="difficulty-title" id="difficulty-title-duel" data-i18n="ui.difficultyTitle">Wähle eine Stufe:</h2>
@@ -349,20 +350,20 @@
         <div class="mascot-stack duel-setup-mascot">
           <img class="mascot-img mascot-float" id="puzzle-mascot" src="assets/mascot/koala-idle.svg" alt="Koala-Maskottchen" width="80" height="80" />
         </div>
-        <h1 id="puzzle-title" data-i18n="puzzle.title">🧩 Weltkarten-Puzzle</h1>
-        <p class="subtitle" id="puzzle-subtitle" data-i18n="puzzle.subtitle">Ziehe die Kontinente an die richtige Stelle!</p>
+        <h1 id="puzzle-title" data-i18n="puzzle.title">🧩 Länder-Puzzle</h1>
+        <p class="subtitle" id="puzzle-subtitle" data-i18n="puzzle.subtitle">Ziehe die Länder an die richtige Stelle auf der Karte!</p>
 
         <div class="puzzle-stats">
           <span class="puzzle-timer" id="puzzle-timer">⏱️ 0:00</span>
-          <span class="puzzle-besttime hidden" id="puzzle-besttime-label">🏆 <span id="puzzle-besttime-word" data-i18n="puzzle.bestTimeLabelWord">Bestzeit</span>: <span id="puzzle-besttime">-</span></span>
+          <span class="puzzle-score" id="puzzle-score-label"><span id="puzzle-score-word" data-i18n="puzzle.scoreLabelWord">Punkte</span>: <span id="puzzle-score">0</span></span>
+          <span class="puzzle-besttime hidden" id="puzzle-highscore-label">🏆 <span id="puzzle-highscore-word" data-i18n="puzzle.highscoreLabelWord">Highscore</span>: <span id="puzzle-highscore">-</span></span>
         </div>
 
-        <div class="puzzle-board-wrap">
-          <svg class="puzzle-board" id="puzzle-board" viewBox="-40 -40 480 340">
-            <g id="puzzle-zones"></g>
-            <g id="puzzle-pieces"></g>
-          </svg>
+        <div class="map-wrap" id="puzzle-map-wrap">
+          <div class="map-container" id="puzzle-map-container"></div>
         </div>
+
+        <div class="puzzle-tray" id="puzzle-tray"></div>
 
         <button id="btn-puzzle-home" class="btn-secondary" data-i18n="ui.home">🏠 Zum Start</button>
       </div>
@@ -378,9 +379,10 @@
           </div>
           <div class="confetti-layer" id="puzzle-confetti-layer"></div>
         </div>
-        <h1 id="puzzle-result-title" data-i18n="puzzle.resultTitle">🎉 Puzzle geschafft!</h1>
-        <p class="result-stats" id="puzzle-result-time">Zeit: 0:00</p>
-        <p id="puzzle-result-best" class="highscore-msg hidden" data-i18n="puzzle.resultBest">🏆 Neue Bestzeit!</p>
+        <h1 id="puzzle-result-title" data-i18n="puzzle.resultTitle">🎉 Puzzle-Runde beendet!</h1>
+        <p class="result-stats" id="puzzle-result-correct">0 von 6 Länder richtig platziert</p>
+        <p class="result-score" id="puzzle-result-score">Punkte: 0</p>
+        <p id="puzzle-result-best" class="highscore-msg hidden" data-i18n="puzzle.resultBest">🏆 Neuer Highscore!</p>
 
         <div class="result-buttons">
           <button id="btn-puzzle-again" class="btn-primary" data-i18n="puzzle.again">🔁 Nochmal puzzeln</button>

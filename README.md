@@ -118,26 +118,39 @@ in diesem Modus nicht als Frage auf.
 
 **Kontinente-Zuordnung**: statt Multiple-Choice wird ein Länderchip per
 Drag & Drop (Pointer Events, funktioniert mit Maus und Touch) auf eine von
-6 beschrifteten Kontinent-Zonen gezogen. Kein Zeitlimit — bei einer falschen
-Zuordnung springt der Chip zurück, der Koala gibt einen aufmunternden
-Hinweis, und dasselbe Land kann beliebig oft erneut versucht werden. Punkte
-gibt es nur für richtige Zuordnungen (volle Punktzahl beim ersten Versuch,
-reduzierte Punktzahl bei einem späteren Versuch); für die
-Freischalt-Fortschritt-Schwelle zählt nur die Erstversuch-Trefferquote.
-Nutzt ansonsten dieselbe Highscore-/Freischalt-Infrastruktur wie die
-anderen Modi.
+6 beschrifteten Kontinent-Zonen gezogen. Kein Zeitlimit, aber jedes Land hat
+nur einen Versuch: Bei einem Drop leuchten die angezielte Zone (falls falsch,
+rot) und die tatsächlich richtige Zone (grün) gleichzeitig für rund 2
+Sekunden auf, danach springt die Runde automatisch zur nächsten Frage weiter
+— kein manuelles Bestätigen nötig. Punkte gibt es nur für richtige
+Zuordnungen. Da der Länder-Pool pro Runde aus eindeutigen Länder-Einträgen
+gezogen wird, kann dasselbe Land innerhalb einer Runde nie direkt
+hintereinander gefragt werden. Nutzt ansonsten dieselbe
+Highscore-/Freischalt-Infrastruktur wie die anderen Modi.
 
-**Puzzle-Modus** (🧩, rein explorativ, kein Punktesystem): eine stark
-vereinfachte Weltkarte aus 6 großen, proportional zueinander platzierten
-Kontinent-Teilen (abgeleitet aus denselben `CONTINENT_REGIONS`, die auch der
-Karte-Modus für den Kontinent-Zoom nutzt), die per Drag & Drop auf eine
-leere, gestrichelte Umriss-Vorlage gezogen werden. Bei ausreichender Nähe
-zur richtigen Position (großzügiger Toleranz-Radius) rastet ein Teil fest
-ein. Die Zeit wird gestoppt; nach Abschluss aller 6 Teile zeigt ein
-Erfolgs-Bildschirm mit Koala-Konfetti-Feier die benötigte Zeit und
-aktualisiert bei Bedarf die in `localStorage` gespeicherte Bestzeit
-(`geoquiz-puzzle-besttime`). Es gibt keine Schwierigkeitsstufen und kein
-Zeitlimit — nur ein einziges, immer gleiches Puzzle zum entspannten Üben.
+**Puzzle-Modus** (🧩 Länder-Puzzle): 6 Länder-Chips — nach Möglichkeit aus
+demselben Kontinent, sonst weltweit gemischt — werden per Drag & Drop
+(Pointer Events) auf eine passend gezoomte Kontinent- bzw. Weltkarte
+gezogen. Die Treffer-Toleranz nutzt dieselbe Klick-Toleranz-Logik
+(`data-cx`/`data-cy`/`data-tol` je Länderpfad) wie der Karte-Modus. Jedes
+Land hat einen Versuch: richtig platziert gibt es Basispunkte plus einen mit
+der Zeit seit der letzten Platzierung abklingenden Geschwindigkeitsbonus
+(kein hartes Zeit-Limit pro Land, damit Drag & Drop nicht stresst); falsch
+platzierte Länder zählen einfach als nicht getroffen. Nach allen 6 Versuchen
+werden nicht korrekt platzierte Länder kurz an ihrer echten Position auf der
+Karte hervorgehoben (Lerneffekt), bevor der Ergebnis-Bildschirm mit
+Trefferquote, Punktzahl und ggf. neuem Highscore (`geoquiz-highscore-puzzle`
+in `localStorage`) erscheint.
+
+**Berge-Modus** (🏔️): "Welcher ist der höchste Berg in [Land]?" mit 4
+Bergnamen zur Auswahl — gleiche Multiple-Choice-Logik wie die anderen
+Text-Modi (neutrale Kachel-Farben, grünes Aufblink-Feedback bei Fehlern,
+Zeitlimit, Scoring, eigener Highscore). Höchster Berg + Höhe in Metern sind
+für die 40 Länder mit Schwierigkeit "leicht"/"mittel" in `countries.json`
+hinterlegt (`mountain`/`mountainHeight`, mit optionalen `mountain_en`/
+`mountain_it`-Übersetzungen nach demselben Muster wie Fluss-/Stadtnamen) —
+für "schwer" existieren keine Bergdaten, daher blendet dieser Modus die
+Schwer-Stufe auf dem Start- und Duell-Einrichtungs-Bildschirm aus.
 
 **Duell-Modus** (⚔️, lokales 2-Spieler-Hot-Seat-Spiel am selben Gerät, kein
 Internet/Server nötig):
@@ -163,7 +176,8 @@ Internet/Server nötig):
   ein — diese bleiben unverändert, unabhängig davon, wie oft und wie
   erfolgreich ein Duell gespielt wird. Kontinente-Zuordnung und Puzzle stehen
   im Duell-Modus (noch) nicht zur Auswahl, da sie kein Zeitlimit/Punkte-pro-
-  Frage-Format nutzen.
+  Frage-Format nutzen; der Berge-Modus ist dagegen wählbar (mit derselben
+  ausgeblendeten Schwer-Stufe wie im Solo-Spiel).
 
 **Mehrsprachigkeit** (🇩🇪 Deutsch / 🇬🇧 English / 🇮🇹 Italiano): über das
 Zahnrad-Symbol auf dem Start-Bildschirm erreichbar. Alle UI-Texte, Fragen-
@@ -198,7 +212,7 @@ Maskottchens (Koala-Kopf vor einem Globus, `icons/icon.svg` +
 `icons/icon-maskable.svg` als Quellen, dazu vorgerenderte PNGs in 180/192/512 px
 für iOS-Homescreen, Android und Standard-Manifest-Icons).
 
-**Pause/Abbrechen**: Ein Pause-Symbol oben im Quiz-Bildschirm (bei allen elf
+**Pause/Abbrechen**: Ein Pause-Symbol oben im Quiz-Bildschirm (bei allen
 Modi, inkl. Duell und Karten-Modus sowie dem Puzzle) öffnet ein Overlay mit
 "Weiterspielen" und "Abbrechen". Während das Overlay offen ist, pausiert der
 Timer (bzw. die Puzzle-Stoppuhr) exakt an der aktuellen Stelle und läuft nach
@@ -217,6 +231,18 @@ Antwort-Kacheln darunter nutzen durchgängig neutrale Farben (kein
 Rot/Grün vorab) — bei einer Fehlantwort blinkt kurz die richtige Kachel
 grün auf. Zwischen Kartendarstellung und Antwortbereich sorgt zusätzlicher
 Abstand für klare visuelle Trennung.
+
+**Kompakter Start-Bildschirm**: Das große zentrale Koala-Bild samt
+Sprechblase wurde entfernt — die kleine Begrüßungszeile unter dem Titel
+bleibt als Text erhalten, die Koala-Sammlung erscheint stattdessen als
+platzsparende, horizontal scrollbare Leiste aus kleinen runden
+Skin-Icons (ausgewählter Skin farblich hervorgehoben, Name/Freischalt-Hinweis
+im Tooltip statt als sichtbarer Text). Die inzwischen 12 Modus-Kacheln
+stehen in einem kompakten 4×3-Raster, die Schwierigkeitsauswahl als kleine
+horizontale Segmented-Control statt gestapelter großer Kacheln — Ziel und
+Ergebnis ist, dass der komplette Start-Bildschirm ohne Scrollen auf einen
+Bildschirm passt, getestet von kleinen Handy-Viewports (360×640) bis
+Desktop-Auflösungen.
 
 ## Noch nicht umgesetzt
 

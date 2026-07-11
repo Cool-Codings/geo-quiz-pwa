@@ -11,8 +11,6 @@ const I18N = {
   de: {
     ui: {
       appTitle: 'Geo-Quiz',
-      subtitle: 'Wie gut kennst du dich auf der Welt aus?',
-      skinCollectionTitle: '🎨 Deine Koala-Sammlung:',
       modeTitle: 'Wähle einen Modus:',
       highscoreWord: 'Highscore',
       pointsWord: 'Punkte',
@@ -49,6 +47,7 @@ const I18N = {
       nachbarn: 'Nachbarn',
       kontinente: 'Kontinente',
       puzzle: 'Puzzle',
+      berge: 'Berge',
       duell: 'Duell',
     },
     submode: {
@@ -64,6 +63,7 @@ const I18N = {
       umriss: 'Länderumrisse',
       nachbarn: 'Nachbarländer',
       kontinente: 'Kontinente-Zuordnung',
+      berge: 'Berge',
       'karte-laender': 'Karte: Länder finden',
       'karte-staedte': 'Karte: Städte finden',
     },
@@ -98,9 +98,7 @@ const I18N = {
       whereIsCountry: 'Wo liegt dieses Land?',
       whereIsCity: 'Wo liegt diese Stadt?',
       dragContinent: 'Ziehe das Land auf den richtigen Kontinent:',
-    },
-    kontinente: {
-      tryAgain: "Versuch's nochmal!",
+      highestMountainOf: 'Welcher ist der höchste Berg in...?',
     },
     duel: {
       title: '⚔️ Duell-Modus',
@@ -120,12 +118,15 @@ const I18N = {
       tieSubMessage: 'Ihr kennt euch beide super mit der Welt aus!',
     },
     puzzle: {
-      title: '🧩 Weltkarten-Puzzle',
-      subtitle: 'Ziehe die Kontinente an die richtige Stelle!',
-      bestTimeLabelWord: 'Bestzeit',
-      resultTitle: '🎉 Puzzle geschafft!',
-      resultTime: 'Zeit: {time}',
-      resultBest: '🏆 Neue Bestzeit!',
+      title: '🧩 Länder-Puzzle',
+      subtitle: 'Ziehe die Länder an die richtige Stelle auf der Karte!',
+      highscoreLabelWord: 'Highscore',
+      scoreLabelWord: 'Punkte',
+      revealHint: 'So liegen sie richtig:',
+      resultTitle: '🎉 Puzzle-Runde beendet!',
+      resultCorrect: '{correct} von {total} Länder richtig platziert',
+      resultScore: 'Punkte: {score}',
+      resultBest: '🏆 Neuer Highscore!',
       again: '🔁 Nochmal puzzeln',
     },
     pause: {
@@ -181,8 +182,6 @@ const I18N = {
   en: {
     ui: {
       appTitle: 'Geo-Quiz',
-      subtitle: 'How well do you know the world?',
-      skinCollectionTitle: '🎨 Your Koala Collection:',
       modeTitle: 'Choose a mode:',
       highscoreWord: 'Highscore',
       pointsWord: 'Points',
@@ -219,6 +218,7 @@ const I18N = {
       nachbarn: 'Neighbors',
       kontinente: 'Continents',
       puzzle: 'Puzzle',
+      berge: 'Mountains',
       duell: 'Duel',
     },
     submode: {
@@ -234,6 +234,7 @@ const I18N = {
       umriss: 'Country Outlines',
       nachbarn: 'Neighboring Countries',
       kontinente: 'Continent Matching',
+      berge: 'Mountains',
       'karte-laender': 'Map: Find Countries',
       'karte-staedte': 'Map: Find Cities',
     },
@@ -268,9 +269,7 @@ const I18N = {
       whereIsCountry: 'Where is this country?',
       whereIsCity: 'Where is this city?',
       dragContinent: 'Drag the country onto the right continent:',
-    },
-    kontinente: {
-      tryAgain: 'Try again!',
+      highestMountainOf: 'Which is the highest mountain in...?',
     },
     duel: {
       title: '⚔️ Duel Mode',
@@ -290,12 +289,15 @@ const I18N = {
       tieSubMessage: 'You both know your way around the world!',
     },
     puzzle: {
-      title: '🧩 World Map Puzzle',
-      subtitle: 'Drag the continents to the right place!',
-      bestTimeLabelWord: 'Best time',
-      resultTitle: '🎉 Puzzle complete!',
-      resultTime: 'Time: {time}',
-      resultBest: '🏆 New best time!',
+      title: '🧩 Country Puzzle',
+      subtitle: 'Drag the countries to the right place on the map!',
+      highscoreLabelWord: 'Highscore',
+      scoreLabelWord: 'Points',
+      revealHint: "Here's where they belong:",
+      resultTitle: '🎉 Puzzle round complete!',
+      resultCorrect: '{correct} of {total} countries placed correctly',
+      resultScore: 'Points: {score}',
+      resultBest: '🏆 New highscore!',
       again: '🔁 Puzzle again',
     },
     pause: {
@@ -351,8 +353,6 @@ const I18N = {
   it: {
     ui: {
       appTitle: 'Geo-Quiz',
-      subtitle: 'Quanto conosci bene il mondo?',
-      skinCollectionTitle: '🎨 La tua collezione di koala:',
       modeTitle: 'Scegli una modalità:',
       highscoreWord: 'Record',
       pointsWord: 'Punti',
@@ -389,6 +389,7 @@ const I18N = {
       nachbarn: 'Vicini',
       kontinente: 'Continenti',
       puzzle: 'Puzzle',
+      berge: 'Montagne',
       duell: 'Duello',
     },
     submode: {
@@ -404,6 +405,7 @@ const I18N = {
       umriss: 'Sagome dei Paesi',
       nachbarn: 'Paesi Confinanti',
       kontinente: 'Abbinamento Continenti',
+      berge: 'Montagne',
       'karte-laender': 'Mappa: Trova i Paesi',
       'karte-staedte': 'Mappa: Trova le Città',
     },
@@ -438,9 +440,7 @@ const I18N = {
       whereIsCountry: 'Dove si trova questo Paese?',
       whereIsCity: 'Dove si trova questa città?',
       dragContinent: 'Trascina il Paese sul continente giusto:',
-    },
-    kontinente: {
-      tryAgain: 'Riprova!',
+      highestMountainOf: 'Qual è la montagna più alta in...?',
     },
     duel: {
       title: '⚔️ Modalità Duello',
@@ -460,12 +460,15 @@ const I18N = {
       tieSubMessage: 'Vi intendete entrambi benissimo di geografia!',
     },
     puzzle: {
-      title: '🧩 Puzzle del Mappamondo',
-      subtitle: 'Trascina i continenti al posto giusto!',
-      bestTimeLabelWord: 'Miglior tempo',
-      resultTitle: '🎉 Puzzle completato!',
-      resultTime: 'Tempo: {time}',
-      resultBest: '🏆 Nuovo miglior tempo!',
+      title: '🧩 Puzzle dei Paesi',
+      subtitle: 'Trascina i Paesi al posto giusto sulla mappa!',
+      highscoreLabelWord: 'Record',
+      scoreLabelWord: 'Punti',
+      revealHint: 'Ecco dove si trovano:',
+      resultTitle: '🎉 Round di puzzle completato!',
+      resultCorrect: '{correct} di {total} Paesi posizionati correttamente',
+      resultScore: 'Punti: {score}',
+      resultBest: '🏆 Nuovo record!',
       again: '🔁 Un altro puzzle',
     },
     pause: {

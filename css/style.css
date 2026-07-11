@@ -10,6 +10,7 @@
   --color-peach: #ffa45b;
   --color-mint: #6bcb77;
   --color-rose: #ff8fab;
+  --color-stone: #8d6e63;
   --color-text: #2b2b3d;
   --radius-lg: 28px;
   --radius-md: 18px;
@@ -138,23 +139,14 @@ body {
   animation: mascot-pop 500ms ease-out;
 }
 
-.mascot-area {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 6px;
-}
-
 .streak-badge {
   background: #fff2d6;
   border: 2px solid var(--color-sun);
   border-radius: 999px;
   padding: 4px 14px;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: bold;
   white-space: nowrap;
-  margin-bottom: 8px;
 }
 
 .speech-bubble {
@@ -229,7 +221,6 @@ h1 {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  margin-bottom: 18px;
   flex-wrap: wrap;
 }
 
@@ -239,6 +230,50 @@ h1 {
   margin-left: 4px;
   width: 100%;
   text-align: center;
+}
+
+/* Kompakter Start-Bildschirm: zielt darauf ab, ohne Scrollen auf einen
+   Bildschirm zu passen (Desktop + Handy) - daher deutlich engere Abstände
+   und kleinere Schrift/Kacheln als die generischen .card/.mode-list-Regeln,
+   ausschließlich hier via .start-card-Scoping (die Duell-Einrichtung nutzt
+   dieselben Basisklassen weiterhin in normaler Größe). */
+
+.start-card {
+  padding: 18px 18px 16px;
+}
+
+.start-card h1 {
+  font-size: 1.4rem;
+  margin: 0 0 2px;
+}
+
+.start-card .subtitle {
+  font-size: 0.85rem;
+  margin: 0 0 10px;
+}
+
+.start-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.start-card .hearts-badge {
+  margin-bottom: 0;
+}
+
+.start-card .highscore-box {
+  padding: 5px 14px;
+  font-size: 0.85rem;
+  margin-bottom: 10px;
+}
+
+.start-card .btn-primary {
+  padding: 12px 20px;
+  font-size: 1.15rem;
 }
 
 .quiz-hearts {
@@ -293,6 +328,7 @@ h1 {
 .mode-btn[data-mode="nachbarn"] { background: var(--color-peach); color: #4a2c00; }
 .mode-btn[data-mode="kontinente"] { background: var(--color-mint); color: #123018; }
 .mode-btn[data-mode="puzzle"] { background: var(--color-rose); color: #5a0a24; }
+.mode-btn[data-mode="berge"] { background: var(--color-stone); }
 
 .mode-btn.selected {
   border-color: var(--color-text);
@@ -304,11 +340,42 @@ h1 {
   box-shadow: none;
 }
 
+/* Kompaktes 4x3-Raster für die 12 Modus-Kacheln auf dem Start-Bildschirm
+   (ID-Scope statt .mode-list, damit die Duell-Einrichtung ihr eigenes,
+   größeres 2-spaltiges Layout für die dortigen 7 Kacheln behält). */
+#mode-list {
+  grid-template-columns: repeat(4, 1fr);
+  gap: 7px;
+  margin-bottom: 12px;
+}
+
+#mode-list .mode-btn {
+  padding: 8px 3px;
+  gap: 2px;
+  border-width: 3px;
+  font-size: 0.62rem;
+  line-height: 1.15;
+}
+
+#mode-list .mode-btn .mode-emoji {
+  font-size: 1.35rem;
+}
+
 .karte-submodes {
   display: flex;
   flex-direction: column;
   gap: 10px;
   margin: -8px 0 22px;
+}
+
+#karte-submodes {
+  margin: -4px 0 12px;
+  gap: 6px;
+}
+
+#karte-submodes .karte-submode-btn {
+  padding: 8px 12px;
+  font-size: 0.85rem;
 }
 
 .karte-submode-btn {
@@ -332,26 +399,32 @@ h1 {
   transform: translateY(2px);
 }
 
+/* Kompakte, horizontal scrollbare Koala-Skin-Leiste (ersetzt das frühere
+   große zentrale Maskottchen-Bild auf dem Start-Bildschirm): kleine runde
+   Icons statt Kacheln mit Text - Name/Freischalt-Hinweis stecken im
+   title-Attribut (native Tooltip) statt fest sichtbarem Text. */
 .skin-collection {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  gap: 8px;
   justify-content: center;
-  margin-bottom: 22px;
+  padding: 2px 2px 6px;
+  margin-bottom: 8px;
 }
 
 .skin-tile {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  width: 74px;
-  padding: 6px 4px 8px;
+  flex-shrink: 0;
+  position: relative;
+  width: 42px;
+  height: 42px;
+  padding: 0;
   border: 3px solid transparent;
-  border-radius: 14px;
+  border-radius: 50%;
   background: #f6f6ff;
   cursor: pointer;
   font-family: inherit;
+  overflow: hidden;
 }
 
 .skin-tile.selected {
@@ -369,8 +442,8 @@ h1 {
 
 .skin-thumb {
   position: relative;
-  width: 52px;
-  height: 52px;
+  width: 100%;
+  height: 100%;
 }
 
 .skin-thumb img {
@@ -388,30 +461,17 @@ h1 {
 
 .skin-lock {
   position: absolute;
-  bottom: -3px;
-  right: -3px;
-  font-size: 0.85rem;
+  bottom: -2px;
+  right: -2px;
+  font-size: 0.6rem;
   background: #fff;
   border-radius: 50%;
-  width: 18px;
-  height: 18px;
+  width: 14px;
+  height: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-}
-
-.skin-name {
-  font-size: 0.7rem;
-  font-weight: bold;
-  text-align: center;
-}
-
-.skin-hint {
-  font-size: 0.6rem;
-  color: #888;
-  text-align: center;
-  line-height: 1.15;
 }
 
 .difficulty-title {
@@ -459,6 +519,28 @@ h1 {
 
 .difficulty-btn:not(:disabled):active {
   transform: scale(0.97);
+}
+
+/* Kompakte, horizontale Segmented-Control statt gestapelter großer Kacheln
+   auf dem Start-Bildschirm (ID-Scope, Duell-Einrichtung behält die
+   gestapelte .difficulty-list-Standardgröße). */
+#difficulty-list {
+  flex-direction: row;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+#difficulty-list .difficulty-btn {
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 4px;
+  font-size: 0.75rem;
+  border-width: 3px;
+}
+
+#difficulty-list .difficulty-btn .difficulty-emoji {
+  font-size: 1.1rem;
 }
 
 .btn-primary,
@@ -1037,7 +1119,8 @@ h1 {
   margin: 10px 0 16px;
 }
 
-.puzzle-timer {
+.puzzle-timer,
+.puzzle-score {
   background: #f4f6ff;
   border-radius: 999px;
   padding: 6px 14px;
@@ -1050,65 +1133,77 @@ h1 {
   padding: 6px 14px;
 }
 
-.puzzle-board-wrap {
-  width: 100%;
-  aspect-ratio: 480 / 340;
-  border-radius: var(--radius-md);
-  border: 3px solid #eef0f8;
-  background: #eaf6ff;
-  overflow: hidden;
-  touch-action: none;
+#puzzle-map-wrap {
+  margin-bottom: 16px;
 }
 
-.puzzle-board {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-
-.puzzle-zone {
-  fill: #ffffff;
-  stroke: #b9c8d8;
-  stroke-width: 2;
-  stroke-dasharray: 6 5;
-}
-
-.puzzle-zone-label {
-  font-size: 20px;
-  text-anchor: middle;
-  opacity: 0.35;
-  pointer-events: none;
-}
-
-.puzzle-piece {
-  cursor: grab;
-}
-
-.puzzle-piece.dragging {
-  cursor: grabbing;
-}
-
-.puzzle-piece.placed {
+/* The puzzle map only ever receives dropped chips, not direct taps/clicks -
+   no pointer/pinch handlers are attached to it, so the "clickable" cursor
+   and active-state fill from the interactive map elsewhere would be
+   misleading here. */
+#puzzle-map-container .country-known {
   cursor: default;
 }
 
-.puzzle-piece-shape {
-  stroke: #fff;
-  stroke-width: 2;
-  filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.15));
+#puzzle-map-container .country-known:active {
+  fill: #ffffff;
 }
 
-.puzzle-piece.piece-na .puzzle-piece-shape { fill: var(--color-purple); }
-.puzzle-piece.piece-sa .puzzle-piece-shape { fill: var(--color-grass); }
-.puzzle-piece.piece-eu .puzzle-piece-shape { fill: var(--color-sky); }
-.puzzle-piece.piece-af .puzzle-piece-shape { fill: var(--color-sun); }
-.puzzle-piece.piece-as .puzzle-piece-shape { fill: var(--color-coral); }
-.puzzle-piece.piece-oc .puzzle-piece-shape { fill: var(--color-teal); }
+.puzzle-tray {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
 
-.puzzle-piece-label {
-  font-size: 22px;
-  text-anchor: middle;
+.puzzle-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: var(--color-purple);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: bold;
+  box-shadow: var(--shadow-soft);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.puzzle-chip img {
+  width: 20px;
+  height: 15px;
+  border-radius: 3px;
+  object-fit: cover;
   pointer-events: none;
+}
+
+.puzzle-chip.dragging {
+  cursor: grabbing;
+  box-shadow: 0 14px 20px rgba(0, 0, 0, 0.25);
+  transform: scale(1.06);
+}
+
+.puzzle-chip.chip-correct {
+  background: var(--color-grass);
+  cursor: default;
+  opacity: 0.6;
+}
+
+.puzzle-chip.chip-wrong {
+  background: var(--color-red);
+  cursor: default;
+  opacity: 0.6;
+}
+
+.map-container .country.map-reveal-target {
+  fill: var(--color-sun) !important;
+  stroke: #a67c00;
+  stroke-width: 1.5;
+  transition: fill 0.15s ease;
 }
 
 /* Einstellungen-Zahnrad + Modals (Einstellungen, Passwort) */

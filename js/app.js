@@ -1,9 +1,13 @@
 const DIFFICULTIES = ['leicht', 'mittel', 'schwer'];
+// Berge only has mountain data for the leicht/mittel countries - "schwer" is
+// hidden for it everywhere a difficulty picker is shown.
+const MODES_WITHOUT_SCHWER = ['berge'];
 const TIME_LIMITS = { leicht: 15, mittel: 12, schwer: 10 };
 const POINTS_PER_CORRECT = { leicht: 10, mittel: 15, schwer: 20 };
 const QUESTIONS_PER_ROUND = 10;
 const UNLOCK_THRESHOLD = 0.7;
 const ANSWER_FEEDBACK_DELAY = 1200;
+const KONTINENTE_FEEDBACK_DELAY = 2000;
 
 const MASCOT_SRC = {
   idle: 'assets/mascot/koala-idle.svg',
@@ -297,6 +301,23 @@ const MODES = {
       return entry;
     },
   },
+  berge: {
+    id: 'berge',
+    highscoreKey: 'geoquiz-highscore-berge',
+    unlockedKey: 'geoquiz-unlocked-difficulty-berge',
+    getPool(countries, difficulty) {
+      // Mountain data only exists for the 40 leicht/mittel countries - there
+      // is no "schwer" pool (the difficulty button is hidden for this mode).
+      return countries.filter((c) => c.difficulty === difficulty && c.mountain);
+    },
+    buildQuestion(entry, pool) {
+      return questionFromField(entry, pool, {
+        promptLabel: 'q.highestMountainOf',
+        promptValue: localizedField(entry, 'country'),
+        answerField: 'mountain',
+      });
+    },
+  },
   'karte-laender': {
     id: 'karte-laender',
     highscoreKey: 'geoquiz-highscore-karte-laender',
@@ -386,9 +407,7 @@ const el = {
   startHighscore: document.getElementById('start-highscore'),
   difficultyButtons: Array.from(document.querySelectorAll('#difficulty-list .difficulty-btn')),
   btnStart: document.getElementById('btn-start'),
-  startMascot: document.getElementById('start-mascot'),
-  startMascotAccessory: document.getElementById('start-mascot-accessory'),
-  startBubble: document.getElementById('start-bubble'),
+  startSubtitle: document.getElementById('start-subtitle'),
   streakBadge: document.getElementById('streak-badge'),
   startHeartIcons: Array.from(document.querySelectorAll('#start-hearts .heart-icon')),
   heartsRegenHint: document.getElementById('hearts-regen-hint'),
@@ -460,16 +479,18 @@ const el = {
 
   puzzleMascot: document.getElementById('puzzle-mascot'),
   puzzleTimer: document.getElementById('puzzle-timer'),
-  puzzleBesttimeLabel: document.getElementById('puzzle-besttime-label'),
-  puzzleBesttime: document.getElementById('puzzle-besttime'),
-  puzzleBoard: document.getElementById('puzzle-board'),
-  puzzleZones: document.getElementById('puzzle-zones'),
-  puzzlePieces: document.getElementById('puzzle-pieces'),
+  puzzleScore: document.getElementById('puzzle-score'),
+  puzzleHighscoreLabel: document.getElementById('puzzle-highscore-label'),
+  puzzleHighscore: document.getElementById('puzzle-highscore'),
+  puzzleMapWrap: document.getElementById('puzzle-map-wrap'),
+  puzzleMapContainer: document.getElementById('puzzle-map-container'),
+  puzzleTray: document.getElementById('puzzle-tray'),
   btnPuzzleHome: document.getElementById('btn-puzzle-home'),
   puzzleResultMascot: document.getElementById('puzzle-result-mascot'),
   puzzleResultMascotAccessory: document.getElementById('puzzle-result-mascot-accessory'),
   puzzleConfettiLayer: document.getElementById('puzzle-confetti-layer'),
-  puzzleResultTime: document.getElementById('puzzle-result-time'),
+  puzzleResultCorrect: document.getElementById('puzzle-result-correct'),
+  puzzleResultScore: document.getElementById('puzzle-result-score'),
   puzzleResultBest: document.getElementById('puzzle-result-best'),
   btnPuzzleAgain: document.getElementById('btn-puzzle-again'),
   btnPuzzleHome2: document.getElementById('btn-puzzle-home2'),
@@ -752,22 +773,12 @@ function renderSkinCollection() {
     }
     tile.appendChild(thumb);
 
-    const name = document.createElement('span');
-    name.className = 'skin-name';
-    name.textContent = t(`skin.${id}.label`);
-    tile.appendChild(name);
-
-    if (!unlocked) {
-      const hint = document.createElement('span');
-      hint.className = 'skin-hint';
-      hint.textContent = t(`skin.${id}.hint`);
-      tile.appendChild(hint);
-    }
+    const label = t(`skin.${id}.label`);
+    tile.title = unlocked ? label : `${label} – ${t(`skin.${id}.hint`)}`;
 
     tile.addEventListener('click', () => {
       if (!unlocked) return;
       setActiveSkin(id);
-      applySkinToMascot(el.startMascotAccessory);
       renderSkinCollection();
     });
 
@@ -833,12 +844,14 @@ function renderStartScreen() {
   el.startHighscore.textContent = getHighscore(state.selectedMode);
 
   const unlockedIndex = getUnlockedIndex(state.selectedMode);
+  const hideSchwer = MODES_WITHOUT_SCHWER.includes(state.selectedMode);
   el.difficultyButtons.forEach((btn) => {
     const difficulty = btn.dataset.difficulty;
     const difficultyIndex = DIFFICULTIES.indexOf(difficulty);
     const isUnlocked = difficultyIndex <= unlockedIndex;
     btn.disabled = !isUnlocked;
     btn.classList.toggle('selected', difficulty === state.selectedDifficulty);
+    btn.classList.toggle('hidden', hideSchwer && difficulty === 'schwer');
   });
 
   renderStreakBadge();
@@ -853,10 +866,11 @@ function renderStreakBadge() {
   el.streakBadge.textContent = t('ui.streakBadge', { n: streak, day });
 }
 
+// The start screen has no koala image anymore (see the compact skin bar in
+// renderSkinCollection() instead) - this just refreshes the small greeting
+// line shown under the title.
 function refreshStartMascot() {
-  el.startMascot.src = MASCOT_SRC.idle;
-  el.startBubble.textContent = pickGreeting();
-  applySkinToMascot(el.startMascotAccessory);
+  el.startSubtitle.textContent = pickGreeting();
 }
 
 // --- Einstellungen (Sprache) ---
@@ -1078,10 +1092,12 @@ function startRound(modeId, difficulty) {
 // --- Kontinente-Zuordnung (Drag & Drop) ---
 // Reuses the #screen-quiz shell (progress/score header, mascot row) but
 // swaps in its own drag & drop panel instead of the answers-grid/map-wrap,
-// and drives its own round loop (no timer, unlimited retries per country).
-// On completion it feeds its results into the normal endRound()/result
-// screen so highscore, unlock progress, streak and skins all work exactly
-// like every other mode.
+// and drives its own round loop (no timer, single attempt per country - a
+// drop always resolves the question, right or wrong). On completion it
+// feeds its results into the normal endRound()/result screen so highscore,
+// unlock progress, streak and skins all work exactly like every other mode.
+// `pool` is drawn from unique country entries and never repeats a country
+// within a round, so no two consecutive questions can ever ask the same one.
 
 const kontinenteDrag = { active: false, pointerId: null, offsetX: 0, offsetY: 0 };
 
@@ -1093,7 +1109,7 @@ function startKontinenteRound(difficulty) {
     currentIndex: 0,
     score: 0,
     cleanCount: 0,
-    firstAttempt: true,
+    answered: false,
     difficulty,
   };
   showScreen('quiz');
@@ -1103,7 +1119,7 @@ function startKontinenteRound(difficulty) {
 function showKontinenteQuestion() {
   const k = state.kontinente;
   const entry = k.pool[k.currentIndex];
-  k.firstAttempt = true;
+  k.answered = false;
 
   el.quizProgress.textContent = t('ui.progressQuiz', { mode: modeLabel('kontinente'), n: k.currentIndex + 1, total: k.pool.length });
   el.quizScore.textContent = k.score;
@@ -1140,7 +1156,7 @@ function resetKontinenteChipPosition() {
 }
 
 function kontinentePointerDown(evt) {
-  if (kontinenteDrag.active) return;
+  if (kontinenteDrag.active || (state.kontinente && state.kontinente.answered)) return;
   const chip = el.kontinenteChip;
   chip.setPointerCapture(evt.pointerId);
   const rect = chip.getBoundingClientRect();
@@ -1190,42 +1206,39 @@ el.kontinenteChip.addEventListener('pointercancel', kontinentePointerUp);
 
 function handleKontinenteDrop(continent, zoneEl) {
   const k = state.kontinente;
+  if (k.answered) return;
+  k.answered = true;
+
   const entry = k.pool[k.currentIndex];
   const isCorrect = continent === entry.continent;
+  // Shown regardless of outcome, so a wrong drop always teaches the right
+  // answer immediately instead of leaving the child to guess again.
+  const correctZoneEl = el.kontinenteZones.find((zone) => zone.dataset.continent === entry.continent);
 
   if (isCorrect) {
-    const points = k.firstAttempt
-      ? POINTS_PER_CORRECT[k.difficulty]
-      : Math.round(POINTS_PER_CORRECT[k.difficulty] * 0.6);
-    k.score += points;
-    if (k.firstAttempt) k.cleanCount += 1;
+    k.score += POINTS_PER_CORRECT[k.difficulty];
+    k.cleanCount += 1;
     el.quizScore.textContent = k.score;
     if (zoneEl) zoneEl.classList.add('zone-correct');
     setMascotPose(el.quizMascot, 'happy', 'mascot-bounce');
     el.quizBubble.textContent = pickRandom(tList('messages.correct'));
-    el.quizBubble.classList.remove('hidden');
-
-    setTimeout(() => {
-      if (zoneEl) zoneEl.classList.remove('zone-correct');
-      if (k.currentIndex + 1 < k.pool.length) {
-        k.currentIndex += 1;
-        showKontinenteQuestion();
-      } else {
-        finishKontinenteRound();
-      }
-    }, ANSWER_FEEDBACK_DELAY);
   } else {
-    k.firstAttempt = false;
+    if (zoneEl) zoneEl.classList.add('zone-wrong');
+    if (correctZoneEl) correctZoneEl.classList.add('zone-correct');
     el.kontinenteChip.classList.add('chip-shake');
-    setTimeout(() => el.kontinenteChip.classList.remove('chip-shake'), 420);
-    if (zoneEl) {
-      zoneEl.classList.add('zone-wrong');
-      setTimeout(() => zoneEl.classList.remove('zone-wrong'), 420);
-    }
     setMascotPose(el.quizMascot, 'comfort', 'mascot-sway');
-    el.quizBubble.textContent = `${pickRandom(tList('messages.wrong'))} ${t('kontinente.tryAgain')}`;
-    el.quizBubble.classList.remove('hidden');
+    el.quizBubble.textContent = pickRandom(tList('messages.wrong'));
   }
+  el.quizBubble.classList.remove('hidden');
+
+  setTimeout(() => {
+    if (k.currentIndex + 1 < k.pool.length) {
+      k.currentIndex += 1;
+      showKontinenteQuestion();
+    } else {
+      finishKontinenteRound();
+    }
+  }, KONTINENTE_FEEDBACK_DELAY);
 }
 
 function finishKontinenteRound() {
@@ -1241,141 +1254,194 @@ function finishKontinenteRound() {
   endRound({});
 }
 
-// --- Puzzle-Modus (Kontinente-Weltkarte) ---
-// A relaxed, explorative mode with no scoring: 6 simplified, proportionally
-// placed continent pieces are dragged onto a matching blank board. No
-// difficulty tiers (there's only one puzzle), no wrong-answer penalty -
-// just a stopwatch and a personal best time in localStorage.
+// --- Puzzle-Modus (Länder auf die Karte ziehen) ---
+// 6 Länder-Chips (bevorzugt aus demselben Kontinent, sonst weltweit gemischt)
+// werden per Drag & Drop auf eine gezoomte Karte gezogen - dieselbe
+// Klick-Toleranz wie im Karte-Modus (data-cx/cy/tol je Länderpfad). Jeder
+// Chip hat genau einen Versuch: richtig oder falsch, die Frage ist damit
+// sofort entschieden (kein hartes Zeit-Limit pro Land, aber auch kein
+// endloses Ausprobieren). Punkte gibt es pro korrekt platziertem Land plus
+// einem mit der Zeit abklingenden Geschwindigkeitsbonus; der Highscore wird
+// wie bei den anderen Modi in localStorage gespeichert.
 
-const SVG_NS = 'http://www.w3.org/2000/svg';
-const PUZZLE_BESTTIME_KEY = 'geoquiz-puzzle-besttime';
-const PUZZLE_SNAP_TOLERANCE = 30;
+const PUZZLE_COUNTRY_COUNT = 6;
+const PUZZLE_POINTS_PER_COUNTRY = 20;
+const PUZZLE_TIME_BONUS_MAX = 15;
+const PUZZLE_TIME_BONUS_WINDOW = 15;
+const PUZZLE_REVEAL_DELAY = 1800;
+const PUZZLE_HIGHSCORE_KEY = 'geoquiz-highscore-puzzle';
 
-const PUZZLE_PIECES = [
-  { continent: 'Nordamerika', emoji: '🦅', x: 10, y: 15, w: 100, h: 75, scatterX: 300, scatterY: -25, colorClass: 'piece-na' },
-  { continent: 'Suedamerika', emoji: '🌴', x: 55, y: 105, w: 75, h: 95, scatterX: -25, scatterY: 210, colorClass: 'piece-sa' },
-  { continent: 'Europa', emoji: '🏰', x: 185, y: 15, w: 65, h: 55, scatterX: 10, scatterY: 190, colorClass: 'piece-eu' },
-  { continent: 'Afrika', emoji: '🦁', x: 175, y: 90, w: 85, h: 100, scatterX: 330, scatterY: 200, colorClass: 'piece-af' },
-  { continent: 'Asien', emoji: '🏯', x: 265, y: 10, w: 130, h: 110, scatterX: -25, scatterY: 60, colorClass: 'piece-as' },
-  { continent: 'Ozeanien', emoji: '🐨', x: 305, y: 155, w: 90, h: 70, scatterX: 140, scatterY: 195, colorClass: 'piece-oc' },
-];
+const puzzleDrag = { active: false, pointerId: null, chipEl: null, offsetX: 0, offsetY: 0 };
 
-const puzzleDrag = { active: false, pointerId: null, pieceEl: null, startTranslate: null, startClient: null };
+function pickPuzzleCountries() {
+  const eligible = state.allCountries.filter((c) => c.code && c.mapEligible);
+  const byContinent = {};
+  eligible.forEach((c) => {
+    (byContinent[c.continent] = byContinent[c.continent] || []).push(c);
+  });
+  const bigContinents = Object.keys(byContinent).filter((k) => byContinent[k].length >= PUZZLE_COUNTRY_COUNT);
+  if (bigContinents.length > 0) {
+    const continent = pickRandom(bigContinents);
+    return { continent, countries: shuffle(byContinent[continent]).slice(0, PUZZLE_COUNTRY_COUNT) };
+  }
+  return { continent: null, countries: shuffle(eligible).slice(0, PUZZLE_COUNTRY_COUNT) };
+}
 
-function buildPuzzleBoard() {
-  el.puzzleZones.innerHTML = '';
-  el.puzzlePieces.innerHTML = '';
+function buildPuzzleTray() {
+  el.puzzleTray.innerHTML = '';
+  state.puzzle.countries.forEach((entry) => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'puzzle-chip';
+    chip.dataset.code = entry.code;
 
-  PUZZLE_PIECES.forEach((p) => {
-    const zoneRect = document.createElementNS(SVG_NS, 'rect');
-    zoneRect.setAttribute('x', p.x);
-    zoneRect.setAttribute('y', p.y);
-    zoneRect.setAttribute('width', p.w);
-    zoneRect.setAttribute('height', p.h);
-    zoneRect.setAttribute('rx', 16);
-    zoneRect.setAttribute('class', 'puzzle-zone');
-    el.puzzleZones.appendChild(zoneRect);
+    const flag = document.createElement('img');
+    flag.src = `assets/flags/${entry.code}.svg`;
+    flag.alt = '';
+    chip.appendChild(flag);
 
-    const zoneLabel = document.createElementNS(SVG_NS, 'text');
-    zoneLabel.setAttribute('x', p.x + p.w / 2);
-    zoneLabel.setAttribute('y', p.y + p.h / 2 + 7);
-    zoneLabel.setAttribute('class', 'puzzle-zone-label');
-    zoneLabel.textContent = p.emoji;
-    el.puzzleZones.appendChild(zoneLabel);
+    const label = document.createElement('span');
+    label.textContent = localizedField(entry, 'country');
+    chip.appendChild(label);
 
-    const g = document.createElementNS(SVG_NS, 'g');
-    g.setAttribute('class', `puzzle-piece ${p.colorClass}`);
-    g.dataset.continent = p.continent;
-    g.setAttribute('transform', `translate(${p.scatterX}, ${p.scatterY})`);
-
-    const rect = document.createElementNS(SVG_NS, 'rect');
-    rect.setAttribute('width', p.w);
-    rect.setAttribute('height', p.h);
-    rect.setAttribute('rx', 16);
-    rect.setAttribute('class', 'puzzle-piece-shape');
-    g.appendChild(rect);
-
-    const label = document.createElementNS(SVG_NS, 'text');
-    label.setAttribute('x', p.w / 2);
-    label.setAttribute('y', p.h / 2 + 7);
-    label.setAttribute('class', 'puzzle-piece-label');
-    label.textContent = p.emoji;
-    g.appendChild(label);
-
-    g.addEventListener('pointerdown', puzzlePiecePointerDown);
-    g.addEventListener('pointermove', puzzlePiecePointerMove);
-    g.addEventListener('pointerup', puzzlePiecePointerUp);
-    g.addEventListener('pointercancel', puzzlePiecePointerUp);
-    el.puzzlePieces.appendChild(g);
+    chip.addEventListener('pointerdown', puzzleChipPointerDown);
+    chip.addEventListener('pointermove', puzzleChipPointerMove);
+    chip.addEventListener('pointerup', puzzleChipPointerUp);
+    chip.addEventListener('pointercancel', puzzleChipPointerUp);
+    el.puzzleTray.appendChild(chip);
   });
 }
 
-function getGroupTranslate(g) {
-  const transform = g.transform.baseVal.consolidate();
-  const matrix = transform ? transform.matrix : { e: 0, f: 0 };
-  return { x: matrix.e, y: matrix.f };
+function preparePuzzleMap(continent) {
+  return fetch('assets/map/world-map.svg')
+    .then((r) => r.text())
+    .then((svgText) => {
+      el.puzzleMapContainer.innerHTML = svgText;
+      const svg = el.puzzleMapContainer.querySelector('svg');
+      state.puzzle.mapSvg = svg;
+      const view = continent ? getContinentView(continent) : { x: 0, y: 0, w: MAP_WIDTH, h: MAP_HEIGHT };
+      svg.setAttribute('viewBox', `${view.x} ${view.y} ${view.w} ${view.h}`);
+    });
 }
 
-function puzzlePiecePointerDown(evt) {
+function resetPuzzleChipPosition(chip) {
+  chip.style.position = '';
+  chip.style.left = '';
+  chip.style.top = '';
+  chip.style.width = '';
+  chip.style.zIndex = '';
+}
+
+function puzzleChipPointerDown(evt) {
   if (puzzleDrag.active) return;
-  const g = evt.currentTarget;
-  if (g.classList.contains('placed')) return;
-  g.setPointerCapture(evt.pointerId);
+  const chip = evt.currentTarget;
+  if (chip.classList.contains('chip-correct') || chip.classList.contains('chip-wrong')) return;
+  chip.setPointerCapture(evt.pointerId);
+  const rect = chip.getBoundingClientRect();
   puzzleDrag.active = true;
   puzzleDrag.pointerId = evt.pointerId;
-  puzzleDrag.pieceEl = g;
-  puzzleDrag.startTranslate = getGroupTranslate(g);
-  puzzleDrag.startClient = { x: evt.clientX, y: evt.clientY };
-  g.classList.add('dragging');
-  el.puzzlePieces.appendChild(g); // bring to front while dragging
+  puzzleDrag.chipEl = chip;
+  puzzleDrag.offsetX = evt.clientX - rect.left;
+  puzzleDrag.offsetY = evt.clientY - rect.top;
+  chip.style.position = 'fixed';
+  chip.style.left = `${rect.left}px`;
+  chip.style.top = `${rect.top}px`;
+  chip.style.width = `${rect.width}px`;
+  chip.style.zIndex = '50';
+  chip.classList.add('dragging');
 }
 
-function puzzlePiecePointerMove(evt) {
+function puzzleChipPointerMove(evt) {
   if (!puzzleDrag.active || evt.pointerId !== puzzleDrag.pointerId) return;
-  const g = puzzleDrag.pieceEl;
-  const ctm = el.puzzleBoard.getScreenCTM();
-  const dxSvg = (evt.clientX - puzzleDrag.startClient.x) / ctm.a;
-  const dySvg = (evt.clientY - puzzleDrag.startClient.y) / ctm.d;
-  const tx = puzzleDrag.startTranslate.x + dxSvg;
-  const ty = puzzleDrag.startTranslate.y + dySvg;
-  g.setAttribute('transform', `translate(${tx}, ${ty})`);
+  puzzleDrag.chipEl.style.left = `${evt.clientX - puzzleDrag.offsetX}px`;
+  puzzleDrag.chipEl.style.top = `${evt.clientY - puzzleDrag.offsetY}px`;
 }
 
-function puzzlePiecePointerUp(evt) {
+function puzzleChipPointerUp(evt) {
   if (!puzzleDrag.active || evt.pointerId !== puzzleDrag.pointerId) return;
   puzzleDrag.active = false;
-  const g = puzzleDrag.pieceEl;
-  puzzleDrag.pieceEl = null;
-  g.classList.remove('dragging');
+  const chip = puzzleDrag.chipEl;
+  puzzleDrag.chipEl = null;
+  chip.classList.remove('dragging');
 
-  const continent = g.dataset.continent;
-  const piece = PUZZLE_PIECES.find((p) => p.continent === continent);
-  const current = getGroupTranslate(g);
-  const dist = Math.hypot(current.x - piece.x, current.y - piece.y);
+  const rect = chip.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+  resetPuzzleChipPosition(chip);
+  resolvePuzzleDrop(chip, centerX, centerY);
+}
 
-  if (dist <= PUZZLE_SNAP_TOLERANCE) {
-    g.setAttribute('transform', `translate(${piece.x}, ${piece.y})`);
-    g.classList.add('placed');
-    state.puzzle.placed.add(continent);
-    setMascotPose(el.puzzleMascot, 'happy', 'mascot-bounce');
-    if (state.puzzle.placed.size === PUZZLE_PIECES.length) {
-      finishPuzzle();
+function resolvePuzzleDrop(chip, clientX, clientY) {
+  const p = state.puzzle;
+  const code = chip.dataset.code;
+  if (!p || !p.mapSvg || p.results[code] !== undefined) return;
+
+  const ctm = p.mapSvg.getScreenCTM();
+  chip.style.pointerEvents = 'none';
+  const dropTarget = document.elementFromPoint(clientX, clientY);
+  chip.style.pointerEvents = '';
+  const pathEl = dropTarget && dropTarget.closest ? dropTarget.closest('path[id]') : null;
+  let isCorrect = pathEl ? pathEl.id === code : false;
+
+  if (!isCorrect) {
+    const targetPath = p.mapSvg.getElementById(code);
+    if (targetPath) {
+      const cx = parseFloat(targetPath.dataset.cx);
+      const cy = parseFloat(targetPath.dataset.cy);
+      const tol = parseFloat(targetPath.dataset.tol);
+      if (withinScreenTolerance(cx, cy, { clientX, clientY }, ctm, tol)) isCorrect = true;
     }
+  }
+
+  resolvePuzzleCountry(code, chip, isCorrect);
+}
+
+function resolvePuzzleCountry(code, chip, isCorrect) {
+  const p = state.puzzle;
+  p.results[code] = isCorrect;
+
+  const now = performance.now();
+  const elapsedSeconds = (now - p.lastEventTime) / 1000;
+  p.lastEventTime = now;
+
+  const targetPath = p.mapSvg.getElementById(code);
+  if (isCorrect) {
+    const bonus = Math.max(0, Math.round(PUZZLE_TIME_BONUS_MAX * (1 - elapsedSeconds / PUZZLE_TIME_BONUS_WINDOW)));
+    p.score += PUZZLE_POINTS_PER_COUNTRY + bonus;
+    el.puzzleScore.textContent = p.score;
+    chip.classList.add('chip-correct');
+    if (targetPath) targetPath.classList.add('map-correct');
+    setMascotPose(el.puzzleMascot, 'happy', 'mascot-bounce');
+  } else {
+    chip.classList.add('chip-wrong');
+    setMascotPose(el.puzzleMascot, 'comfort', 'mascot-sway');
+  }
+
+  if (Object.keys(p.results).length === p.countries.length) {
+    finishPuzzleRound();
   }
 }
 
 function startPuzzle() {
   state.isDuel = false;
-  buildPuzzleBoard();
+  const { continent, countries } = pickPuzzleCountries();
   state.puzzle = {
-    placed: new Set(),
+    countries,
+    continent,
+    results: {},
+    score: 0,
+    mapSvg: null,
     startTime: performance.now(),
+    lastEventTime: performance.now(),
     timerHandle: null,
     pausedAt: null,
   };
+  el.puzzleScore.textContent = '0';
   updatePuzzleTimerDisplay(0);
   resumePuzzleTimerInterval();
-  renderPuzzleBestTime();
+  renderPuzzleHighscore();
+  buildPuzzleTray();
+  preparePuzzleMap(continent).catch((err) => console.error('Puzzle-Karte konnte nicht geladen werden:', err));
   el.puzzleMascot.src = MASCOT_SRC.idle;
   showScreen('puzzle');
 }
@@ -1397,30 +1463,49 @@ function updatePuzzleTimerDisplay(seconds) {
   el.puzzleTimer.textContent = `⏱️ ${formatPuzzleTime(seconds)}`;
 }
 
-function getPuzzleBestTime() {
-  const value = parseFloat(localStorage.getItem(PUZZLE_BESTTIME_KEY));
-  return Number.isFinite(value) ? value : null;
+function getPuzzleHighscore() {
+  return parseInt(localStorage.getItem(PUZZLE_HIGHSCORE_KEY), 10) || 0;
 }
 
-function renderPuzzleBestTime() {
-  const best = getPuzzleBestTime();
-  el.puzzleBesttimeLabel.classList.toggle('hidden', best === null);
-  if (best !== null) el.puzzleBesttime.textContent = formatPuzzleTime(best);
+function setPuzzleHighscore(value) {
+  localStorage.setItem(PUZZLE_HIGHSCORE_KEY, String(value));
 }
 
-function finishPuzzle() {
-  clearInterval(state.puzzle.timerHandle);
-  const elapsed = (performance.now() - state.puzzle.startTime) / 1000;
-  const best = getPuzzleBestTime();
-  const isNewBest = best === null || elapsed < best;
-  if (isNewBest) localStorage.setItem(PUZZLE_BESTTIME_KEY, String(elapsed));
+function renderPuzzleHighscore() {
+  const best = getPuzzleHighscore();
+  el.puzzleHighscoreLabel.classList.toggle('hidden', best <= 0);
+  el.puzzleHighscore.textContent = best;
+}
 
-  el.puzzleResultTime.textContent = t('puzzle.resultTime', { time: formatPuzzleTime(elapsed) });
-  el.puzzleResultBest.classList.toggle('hidden', !isNewBest);
-  setMascotPose(el.puzzleResultMascot, 'excited', 'mascot-pop');
-  applySkinToMascot(el.puzzleResultMascotAccessory);
-  launchConfetti(el.puzzleConfettiLayer);
-  showScreen('puzzleResult');
+function finishPuzzleRound() {
+  const p = state.puzzle;
+  clearInterval(p.timerHandle);
+  const correctCount = Object.values(p.results).filter(Boolean).length;
+  const missed = p.countries.filter((c) => p.results[c.code] === false);
+  missed.forEach((c) => {
+    const path = p.mapSvg.getElementById(c.code);
+    if (path) path.classList.add('map-reveal-target');
+  });
+
+  const reveal = () => {
+    const isNewBest = p.score > getPuzzleHighscore();
+    if (isNewBest) setPuzzleHighscore(p.score);
+
+    el.puzzleResultCorrect.textContent = t('puzzle.resultCorrect', { correct: correctCount, total: p.countries.length });
+    el.puzzleResultScore.textContent = t('puzzle.resultScore', { score: p.score });
+    el.puzzleResultBest.classList.toggle('hidden', !isNewBest);
+    const pose = correctCount === p.countries.length ? 'excited' : correctCount === 0 ? 'comfort' : 'happy';
+    setMascotPose(el.puzzleResultMascot, pose, 'mascot-pop');
+    applySkinToMascot(el.puzzleResultMascotAccessory);
+    if (isNewBest || correctCount === p.countries.length) launchConfetti(el.puzzleConfettiLayer);
+    showScreen('puzzleResult');
+  };
+
+  if (missed.length > 0) {
+    setTimeout(reveal, PUZZLE_REVEAL_DELAY);
+  } else {
+    reveal();
+  }
 }
 
 el.btnPuzzleHome.addEventListener('click', () => {
@@ -1451,8 +1536,13 @@ function renderDuelSetup() {
   el.duelModeButtons.forEach((btn) => {
     btn.classList.toggle('selected', btn.dataset.mode === state.duelSetup.mode);
   });
+  const hideSchwer = MODES_WITHOUT_SCHWER.includes(state.duelSetup.mode);
+  if (hideSchwer && state.duelSetup.difficulty === 'schwer') {
+    state.duelSetup.difficulty = 'mittel';
+  }
   el.duelDifficultyButtons.forEach((btn) => {
     btn.classList.toggle('selected', btn.dataset.difficulty === state.duelSetup.difficulty);
+    btn.classList.toggle('hidden', hideSchwer && btn.dataset.difficulty === 'schwer');
   });
 }
 
