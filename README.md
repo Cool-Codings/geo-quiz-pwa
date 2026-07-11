@@ -244,6 +244,35 @@ Ergebnis ist, dass der komplette Start-Bildschirm ohne Scrollen auf einen
 Bildschirm passt, getestet von kleinen Handy-Viewports (360×640) bis
 Desktop-Auflösungen.
 
+**Bestenliste (Top 5 mit Namenseingabe)**: Zusätzlich zum bisherigen
+einzelnen Highscore pro Modus (der weiterhin die Highscore-Pille auf dem
+Start-Bildschirm und die "Neuer Highscore!"-Meldung speist) führt jeder der
+zwölf Solo-Modi eine eigene Bestenliste pro Modus **und** Schwierigkeitsstufe
+(`geoquiz-leaderboard-{modus}-{stufe}` in `localStorage`, für den Puzzle-
+Modus ohne Stufen mit der festen Pseudo-Stufe `default`). Reicht der erzielte
+Score für die Top 5, erscheint auf dem Ergebnis-Bildschirm ein kurzes
+Namensfeld (max. 12 Zeichen); nach dem Speichern öffnet sich zur Bestätigung
+direkt die aktualisierte Bestenliste. Reicht der Score nicht für die Top 5,
+geht es ohne Namensabfrage normal weiter. Ein 🏅-Symbol neben der
+Highscore-Pille auf dem Start-Bildschirm sowie ein "Bestenliste"-Button auf
+den Ergebnis-Bildschirmen (Solo + Puzzle) öffnen jederzeit ein Overlay mit
+Rang, Name und Punktzahl der Top 5. Der Duell-Modus bleibt unverändert ohne
+eigene Bestenliste — dort zählt nur der direkte Vergleich der beiden
+Spieler.
+
+**Zeitbonus am Rundenende**: Alle Modi mit festem Zeitlimit pro Frage
+(also alle außer Kontinente-Zuordnung und Puzzle, die beide kein hartes
+Zeitlimit haben) erhalten am Ende der gesamten Runde zusätzlich zu den
+regulären, nach Schwierigkeit gestaffelten Punkten pro richtiger Antwort
+einen einmaligen Zeitbonus: `60 − benötigte Gesamt-Sekunden der Runde`
+(mindestens 0, kein Punktabzug bei Überschreitung). Während der Runde
+pausierte Zeit (Pause-Overlay) zählt dabei nicht mit. Der Bonus wird vor
+dem Highscore-/Bestenlisten-Vergleich zum Punktestand addiert und auf dem
+Ergebnis-Bildschirm nachvollziehbar aufgeschlüsselt angezeigt (z. B.
+"Punkte: 100 + Zeitbonus: 46 = Gesamt: 146"). Der Duell-Modus erhält
+denselben Zeitbonus symmetrisch für beide Spielerrunden, damit der
+Vergleich fair bleibt.
+
 ## Noch nicht umgesetzt
 
 Keine offenen Punkte aus der ursprünglichen Planung — mögliche zukünftige

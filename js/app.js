@@ -8,6 +8,13 @@ const QUESTIONS_PER_ROUND = 10;
 const UNLOCK_THRESHOLD = 0.7;
 const ANSWER_FEEDBACK_DELAY = 1200;
 const KONTINENTE_FEEDBACK_DELAY = 2000;
+// One-time bonus added at the end of a round based on total time taken
+// (60 - seconds elapsed, floored at 0) - Kontinente-Zuordnung and Puzzle
+// have no hard per-question time limit, so they're excluded.
+const ROUND_TIME_BONUS_BASE = 60;
+const MODES_WITHOUT_TIME_BONUS = ['kontinente'];
+const LEADERBOARD_SIZE = 5;
+const LEADERBOARD_NAME_MAX_LEN = 12;
 
 const MASCOT_SRC = {
   idle: 'assets/mascot/koala-idle.svg',
@@ -405,6 +412,7 @@ const el = {
   karteSubmodeButtons: Array.from(document.querySelectorAll('.karte-submode-btn')),
   startModeLabel: document.getElementById('start-mode-label'),
   startHighscore: document.getElementById('start-highscore'),
+  btnStartLeaderboard: document.getElementById('btn-start-leaderboard'),
   difficultyButtons: Array.from(document.querySelectorAll('#difficulty-list .difficulty-btn')),
   btnStart: document.getElementById('btn-start'),
   startSubtitle: document.getElementById('start-subtitle'),
@@ -439,7 +447,9 @@ const el = {
 
   resultTitle: document.getElementById('result-title'),
   resultModeLabel: document.getElementById('result-mode-label'),
+  resultScoreLine: document.getElementById('result-score-line'),
   resultScore: document.getElementById('result-score'),
+  resultScoreBonusLine: document.getElementById('result-score-bonus-line'),
   resultCorrectLine: document.getElementById('result-correct-line'),
   resultHighscoreMsg: document.getElementById('result-highscore-msg'),
   resultUnlockMsg: document.getElementById('result-unlock-msg'),
@@ -447,6 +457,10 @@ const el = {
   resultMascot: document.getElementById('result-mascot'),
   resultMascotAccessory: document.getElementById('result-mascot-accessory'),
   confettiLayer: document.getElementById('confetti-layer'),
+  resultNameEntry: document.getElementById('result-name-entry'),
+  resultNameInput: document.getElementById('result-name-input'),
+  btnResultNameSave: document.getElementById('btn-result-name-save'),
+  btnResultLeaderboard: document.getElementById('btn-result-leaderboard'),
   btnAgain: document.getElementById('btn-again'),
   btnHome: document.getElementById('btn-home'),
 
@@ -492,8 +506,18 @@ const el = {
   puzzleResultCorrect: document.getElementById('puzzle-result-correct'),
   puzzleResultScore: document.getElementById('puzzle-result-score'),
   puzzleResultBest: document.getElementById('puzzle-result-best'),
+  puzzleNameEntry: document.getElementById('puzzle-name-entry'),
+  puzzleNameInput: document.getElementById('puzzle-name-input'),
+  btnPuzzleNameSave: document.getElementById('btn-puzzle-name-save'),
+  btnPuzzleLeaderboard: document.getElementById('btn-puzzle-leaderboard'),
   btnPuzzleAgain: document.getElementById('btn-puzzle-again'),
   btnPuzzleHome2: document.getElementById('btn-puzzle-home2'),
+
+  leaderboardOverlay: document.getElementById('leaderboard-overlay'),
+  leaderboardModeLabel: document.getElementById('leaderboard-mode-label'),
+  leaderboardList: document.getElementById('leaderboard-list'),
+  leaderboardEmpty: document.getElementById('leaderboard-empty'),
+  btnLeaderboardClose: document.getElementById('btn-leaderboard-close'),
 };
 
 const state = {
@@ -523,6 +547,11 @@ const state = {
   duel: null,
   kontinente: null,
   puzzle: null,
+  roundStartTime: 0,
+  roundPausedMs: 0,
+  roundPausedAt: null,
+  lastTimeBonus: 0,
+  pendingLeaderboardEntry: null,
 };
 
 // Transient multi-touch gesture bookkeeping for the map (pan + pinch-zoom).
@@ -959,6 +988,9 @@ function openPause() {
     }
   } else {
     clearInterval(state.timerHandle);
+    // Also excludes paused time from the round-end time bonus (see
+    // applyRoundTimeBonus()).
+    state.roundPausedAt = performance.now();
   }
   showPauseMainView();
   el.pauseOverlay.classList.remove('hidden');
@@ -973,10 +1005,16 @@ function closePauseAndResume() {
       state.puzzle.pausedAt = null;
       resumePuzzleTimerInterval();
     }
-  } else if (!el.timerWrap.classList.contains('hidden')) {
-    // Only modes that actually show/use the countdown (i.e. not
-    // Kontinente-Zuordnung, which hides it) need their timer resumed.
-    resumeTimerInterval();
+  } else {
+    if (state.roundPausedAt != null) {
+      state.roundPausedMs += performance.now() - state.roundPausedAt;
+      state.roundPausedAt = null;
+    }
+    if (!el.timerWrap.classList.contains('hidden')) {
+      // Only modes that actually show/use the countdown (i.e. not
+      // Kontinente-Zuordnung, which hides it) need their timer resumed.
+      resumeTimerInterval();
+    }
   }
 }
 
@@ -1076,6 +1114,17 @@ function buildQuestions(modeId, difficulty) {
   return picked.map((entry) => mode.buildQuestion(entry, pool));
 }
 
+// Tracks how long a round of timed questions takes in total, so a one-time
+// bonus can be added once it ends (see applyRoundTimeBonus()). Paused time
+// is tracked separately (roundPausedMs, accumulated in openPause()/
+// closePauseAndResume()) and subtracted back out, so pausing never costs
+// the player time-bonus points.
+function resetRoundTimer() {
+  state.roundStartTime = performance.now();
+  state.roundPausedMs = 0;
+  state.roundPausedAt = null;
+}
+
 function startRound(modeId, difficulty) {
   state.isDuel = false;
   state.roundMode = modeId;
@@ -1084,6 +1133,7 @@ function startRound(modeId, difficulty) {
   state.currentIndex = 0;
   state.score = 0;
   state.correctCount = 0;
+  resetRoundTimer();
 
   showScreen('quiz');
   showQuestion();
@@ -1490,10 +1540,14 @@ function finishPuzzleRound() {
   const reveal = () => {
     const isNewBest = p.score > getPuzzleHighscore();
     if (isNewBest) setPuzzleHighscore(p.score);
+    checkLeaderboardQualification('puzzle', 'default', p.score);
 
     el.puzzleResultCorrect.textContent = t('puzzle.resultCorrect', { correct: correctCount, total: p.countries.length });
     el.puzzleResultScore.textContent = t('puzzle.resultScore', { score: p.score });
     el.puzzleResultBest.classList.toggle('hidden', !isNewBest);
+    const pending = state.pendingLeaderboardEntry;
+    el.puzzleNameEntry.classList.toggle('hidden', !pending);
+    if (pending) el.puzzleNameInput.value = '';
     const pose = correctCount === p.countries.length ? 'excited' : correctCount === 0 ? 'comfort' : 'happy';
     setMascotPose(el.puzzleResultMascot, pose, 'mascot-pop');
     applySkinToMascot(el.puzzleResultMascotAccessory);
@@ -1594,6 +1648,7 @@ function startDuel(modeId, difficulty, player1Name, player2Name) {
   state.currentIndex = 0;
   state.score = 0;
   state.correctCount = 0;
+  resetRoundTimer();
 
   showScreen('quiz');
   showQuestion();
@@ -1622,6 +1677,7 @@ el.btnDuelHandoffContinue.addEventListener('click', () => {
   state.currentIndex = 0;
   state.score = 0;
   state.correctCount = 0;
+  resetRoundTimer();
   showScreen('quiz');
   showQuestion();
 });
@@ -1823,6 +1879,9 @@ function finishAnswer(isCorrect) {
   el.quizBubble.classList.remove('hidden');
 
   setTimeout(() => {
+    const roundIsEnding = heartsDepleted || state.currentIndex + 1 >= state.questions.length;
+    if (roundIsEnding) applyRoundTimeBonus();
+
     if (heartsDepleted) {
       endRound({ heartsDepleted: true });
     } else if (state.currentIndex + 1 < state.questions.length) {
@@ -1834,6 +1893,20 @@ function finishAnswer(isCorrect) {
       endRound({});
     }
   }, ANSWER_FEEDBACK_DELAY);
+}
+
+// Adds the one-time round-end time bonus straight to state.score, so every
+// downstream consumer (highscore compare, leaderboard, lifetime stats, duel
+// score comparison) automatically includes it.
+function applyRoundTimeBonus() {
+  state.lastTimeBonus = 0;
+  if (MODES_WITHOUT_TIME_BONUS.includes(state.roundMode)) return;
+  const pausedMs = state.roundPausedMs + (state.roundPausedAt != null ? performance.now() - state.roundPausedAt : 0);
+  const elapsedSeconds = (performance.now() - state.roundStartTime - pausedMs) / 1000;
+  const bonus = Math.max(0, Math.round(ROUND_TIME_BONUS_BASE - elapsedSeconds));
+  state.lastTimeBonus = bonus;
+  state.score += bonus;
+  el.quizScore.textContent = state.score;
 }
 
 function loadMap() {
@@ -2146,6 +2219,121 @@ function showCountryInContinentContext(code, continent) {
   setMapView(view, { animate: true });
 }
 
+// --- Bestenliste (Top 5 pro Modus + Schwierigkeit) ---
+// Separate from the existing single best-score-per-mode value (which still
+// drives the start screen's highscore pill and the "Neuer Highscore!"
+// message) - this additionally keeps the top 5 named runs per
+// mode+difficulty combo in localStorage. Puzzle has no difficulty tiers, so
+// it always uses the fixed pseudo-difficulty 'default'. Duell never writes
+// here - it stays a direct two-player comparison only.
+
+function leaderboardKey(modeId, difficulty) {
+  return `geoquiz-leaderboard-${modeId}-${difficulty}`;
+}
+
+function getLeaderboard(modeId, difficulty) {
+  try {
+    const list = JSON.parse(localStorage.getItem(leaderboardKey(modeId, difficulty)));
+    return Array.isArray(list) ? list : [];
+  } catch (err) {
+    return [];
+  }
+}
+
+function saveLeaderboard(modeId, difficulty, list) {
+  localStorage.setItem(leaderboardKey(modeId, difficulty), JSON.stringify(list));
+}
+
+function qualifiesForLeaderboard(modeId, difficulty, score) {
+  const list = getLeaderboard(modeId, difficulty);
+  if (list.length < LEADERBOARD_SIZE) return true;
+  return score > list[list.length - 1].score;
+}
+
+function addLeaderboardEntry(modeId, difficulty, name, score) {
+  const list = getLeaderboard(modeId, difficulty);
+  list.push({ name, score, date: todayString() });
+  list.sort((a, b) => b.score - a.score);
+  const trimmed = list.slice(0, LEADERBOARD_SIZE);
+  saveLeaderboard(modeId, difficulty, trimmed);
+  return trimmed;
+}
+
+function renderLeaderboardEntries(list) {
+  el.leaderboardList.innerHTML = '';
+  list.forEach((entry, i) => {
+    const li = document.createElement('li');
+    li.className = 'leaderboard-entry';
+
+    const rank = document.createElement('span');
+    rank.className = 'leaderboard-rank';
+    rank.textContent = `#${i + 1}`;
+
+    const name = document.createElement('span');
+    name.className = 'leaderboard-name';
+    name.textContent = entry.name;
+
+    const score = document.createElement('span');
+    score.className = 'leaderboard-score';
+    score.textContent = entry.score;
+
+    li.append(rank, name, score);
+    el.leaderboardList.appendChild(li);
+  });
+  el.leaderboardEmpty.classList.toggle('hidden', list.length > 0);
+}
+
+function openLeaderboard(modeId, difficulty) {
+  const list = getLeaderboard(modeId, difficulty);
+  el.leaderboardModeLabel.textContent = modeId === 'puzzle'
+    ? t('tile.puzzle')
+    : `${modeLabel(modeId)} · ${t(`difficulty.${difficulty}`)}`;
+  renderLeaderboardEntries(list);
+  el.leaderboardOverlay.classList.remove('hidden');
+}
+
+el.btnLeaderboardClose.addEventListener('click', () => {
+  el.leaderboardOverlay.classList.add('hidden');
+});
+el.btnStartLeaderboard.addEventListener('click', () => {
+  openLeaderboard(state.selectedMode, state.selectedDifficulty);
+});
+el.btnResultLeaderboard.addEventListener('click', () => {
+  openLeaderboard(state.roundMode, state.roundDifficulty);
+});
+el.btnPuzzleLeaderboard.addEventListener('click', () => {
+  openLeaderboard('puzzle', 'default');
+});
+
+// Saves the pending leaderboard entry (set by checkLeaderboardQualification)
+// under whatever name the child typed, then re-opens the leaderboard as a
+// small confirmation that it worked.
+function saveNameEntry(inputEl, entryWrapEl) {
+  const pending = state.pendingLeaderboardEntry;
+  if (!pending) return;
+  const typed = inputEl.value.trim().slice(0, LEADERBOARD_NAME_MAX_LEN);
+  const name = typed || t('leaderboard.anonymous');
+  addLeaderboardEntry(pending.modeId, pending.difficulty, name, pending.score);
+  state.pendingLeaderboardEntry = null;
+  entryWrapEl.classList.add('hidden');
+  openLeaderboard(pending.modeId, pending.difficulty);
+}
+
+el.btnResultNameSave.addEventListener('click', () => saveNameEntry(el.resultNameInput, el.resultNameEntry));
+el.resultNameInput.addEventListener('keydown', (evt) => {
+  if (evt.key === 'Enter') saveNameEntry(el.resultNameInput, el.resultNameEntry);
+});
+el.btnPuzzleNameSave.addEventListener('click', () => saveNameEntry(el.puzzleNameInput, el.puzzleNameEntry));
+el.puzzleNameInput.addEventListener('keydown', (evt) => {
+  if (evt.key === 'Enter') saveNameEntry(el.puzzleNameInput, el.puzzleNameEntry);
+});
+
+function checkLeaderboardQualification(modeId, difficulty, score) {
+  state.pendingLeaderboardEntry = qualifiesForLeaderboard(modeId, difficulty, score)
+    ? { modeId, difficulty, score }
+    : null;
+}
+
 function endRound({ heartsDepleted = false } = {}) {
   const attempted = Math.min(state.currentIndex + 1, state.questions.length);
   const accuracy = attempted > 0 ? state.correctCount / attempted : 0;
@@ -2170,6 +2358,7 @@ function endRound({ heartsDepleted = false } = {}) {
   const { milestone, count: newStreakCount } = registerPlayedToday();
   recordRoundStats(state.score, newStreakCount);
   const newlyUnlockedSkin = getUnlockedSkinIds().find((id) => !previousUnlockedSkins.includes(id));
+  checkLeaderboardQualification(state.roundMode, state.roundDifficulty, state.score);
 
   renderResult({ isNewHighscore, unlockedNextStage, milestone, heartsDepleted, attempted, newlyUnlockedSkin });
   showScreen('result');
@@ -2181,6 +2370,18 @@ function renderResult({ isNewHighscore, unlockedNextStage, milestone, heartsDepl
   el.resultModeLabel.textContent = `${t('ui.modeLinePrefix')} ${modeLabel(state.roundMode)}`;
   el.resultScore.textContent = state.score;
   el.resultCorrectLine.textContent = t('ui.correctOfTotal', { correct: state.correctCount, total: attempted });
+
+  const showsTimeBonus = !MODES_WITHOUT_TIME_BONUS.includes(state.roundMode);
+  el.resultScoreLine.classList.toggle('hidden', showsTimeBonus);
+  el.resultScoreBonusLine.classList.toggle('hidden', !showsTimeBonus);
+  if (showsTimeBonus) {
+    const base = state.score - state.lastTimeBonus;
+    el.resultScoreBonusLine.textContent = t('ui.pointsWithBonusLine', { base, bonus: state.lastTimeBonus, total: state.score });
+  }
+
+  const pending = state.pendingLeaderboardEntry;
+  el.resultNameEntry.classList.toggle('hidden', !pending);
+  if (pending) el.resultNameInput.value = '';
 
   const accuracy = attempted > 0 ? state.correctCount / attempted : 0;
   const tier = getResultTier(accuracy);

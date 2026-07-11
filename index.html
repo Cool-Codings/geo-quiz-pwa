@@ -61,6 +61,17 @@
     </div>
   </div>
 
+  <!-- Bestenliste -->
+  <div class="modal-overlay hidden" id="leaderboard-overlay">
+    <div class="modal-card">
+      <h1 data-i18n="leaderboard.title">🏅 Bestenliste</h1>
+      <p class="leaderboard-mode-label" id="leaderboard-mode-label">Hauptstädte · Leicht</p>
+      <ol class="leaderboard-list" id="leaderboard-list"></ol>
+      <p class="leaderboard-empty hidden" id="leaderboard-empty" data-i18n="leaderboard.empty">Noch keine Einträge - sei die Erste oder der Erste!</p>
+      <button id="btn-leaderboard-close" class="btn-primary" data-i18n="leaderboard.close">Schließen</button>
+    </div>
+  </div>
+
   <div class="app">
 
     <!-- Start-Bildschirm -->
@@ -141,6 +152,7 @@
 
         <div class="highscore-box">
           🏆 <span id="start-highscore-word" data-i18n="ui.highscoreWord">Highscore</span> <span id="start-mode-label">Hauptstädte</span>: <span id="start-highscore">0</span>
+          <button class="leaderboard-icon-btn" id="btn-start-leaderboard" type="button" data-i18n-aria="leaderboard.buttonLabel" aria-label="Bestenliste anzeigen">🏅</button>
         </div>
 
         <div class="difficulty-list" id="difficulty-list">
@@ -239,7 +251,8 @@
         <p class="result-mode-label" id="result-mode-label">Modus: Hauptstädte</p>
 
         <div class="result-stats">
-          <p class="result-score"><span id="result-score-word" data-i18n="ui.pointsWord">Punkte</span>: <span id="result-score">0</span></p>
+          <p class="result-score" id="result-score-line"><span id="result-score-word" data-i18n="ui.pointsWord">Punkte</span>: <span id="result-score">0</span></p>
+          <p class="result-score-bonus hidden" id="result-score-bonus-line"></p>
           <p class="result-correct" id="result-correct-line">0 von 10 richtig</p>
         </div>
 
@@ -247,8 +260,15 @@
         <p id="result-unlock-msg" class="unlock-msg hidden">🔓 Nächste Stufe freigeschaltet!</p>
         <p id="result-skin-msg" class="unlock-msg hidden">🎁 Neuer Koala-Skin freigeschaltet!</p>
 
+        <div class="name-entry hidden" id="result-name-entry">
+          <p class="name-entry-label" data-i18n="leaderboard.newEntryPrompt">🏆 Super! Das reicht für die Bestenliste! Wie heißt du?</p>
+          <input type="text" id="result-name-input" class="duel-name-input" maxlength="12" autocomplete="off" data-i18n-placeholder="leaderboard.namePlaceholder" placeholder="Dein Name" />
+          <button id="btn-result-name-save" class="btn-primary" data-i18n="leaderboard.save">💾 Speichern</button>
+        </div>
+
         <div class="result-buttons">
           <button id="btn-again" class="btn-primary" data-i18n="ui.again">🔁 Nochmal spielen</button>
+          <button id="btn-result-leaderboard" class="btn-secondary" data-i18n="leaderboard.viewButton">🏅 Bestenliste</button>
           <button id="btn-home" class="btn-secondary" data-i18n="ui.home">🏠 Zum Start</button>
         </div>
       </div>
@@ -384,8 +404,15 @@
         <p class="result-score" id="puzzle-result-score">Punkte: 0</p>
         <p id="puzzle-result-best" class="highscore-msg hidden" data-i18n="puzzle.resultBest">🏆 Neuer Highscore!</p>
 
+        <div class="name-entry hidden" id="puzzle-name-entry">
+          <p class="name-entry-label" data-i18n="leaderboard.newEntryPrompt">🏆 Super! Das reicht für die Bestenliste! Wie heißt du?</p>
+          <input type="text" id="puzzle-name-input" class="duel-name-input" maxlength="12" autocomplete="off" data-i18n-placeholder="leaderboard.namePlaceholder" placeholder="Dein Name" />
+          <button id="btn-puzzle-name-save" class="btn-primary" data-i18n="leaderboard.save">💾 Speichern</button>
+        </div>
+
         <div class="result-buttons">
           <button id="btn-puzzle-again" class="btn-primary" data-i18n="puzzle.again">🔁 Nochmal puzzeln</button>
+          <button id="btn-puzzle-leaderboard" class="btn-secondary" data-i18n="leaderboard.viewButton">🏅 Bestenliste</button>
           <button id="btn-puzzle-home2" class="btn-secondary" data-i18n="ui.home">🏠 Zum Start</button>
         </div>
       </div>

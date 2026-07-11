@@ -196,14 +196,34 @@ h1 {
 }
 
 .highscore-box {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   background: #fff6d8;
   border: 3px solid var(--color-sun);
   border-radius: 999px;
-  padding: 8px 20px;
+  padding: 8px 12px 8px 20px;
   font-size: 1.1rem;
   font-weight: bold;
   margin-bottom: 24px;
+}
+
+.leaderboard-icon-btn {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: #fff;
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.leaderboard-icon-btn:active {
+  transform: translateY(2px);
+  box-shadow: none;
 }
 
 .heart-icon {
@@ -266,9 +286,15 @@ h1 {
 }
 
 .start-card .highscore-box {
-  padding: 5px 14px;
+  padding: 5px 6px 5px 14px;
   font-size: 0.85rem;
   margin-bottom: 10px;
+}
+
+.start-card .leaderboard-icon-btn {
+  width: 22px;
+  height: 22px;
+  font-size: 0.7rem;
 }
 
 .start-card .btn-primary {
@@ -940,9 +966,96 @@ h1 {
   color: var(--color-grass);
 }
 
+.result-score-bonus {
+  font-size: 1.05rem;
+  font-weight: bold;
+  margin: 0 0 4px;
+  color: var(--color-grass);
+}
+
 .result-correct {
   margin: 0;
   color: #555;
+}
+
+/* Namenseingabe für die Bestenliste (Ergebnis- + Puzzle-Ergebnis-Bildschirm) */
+
+.name-entry {
+  margin: 14px 0;
+  padding: 14px;
+  border-radius: var(--radius-md);
+  background: #fff6d8;
+  border: 3px solid var(--color-sun);
+}
+
+.name-entry-label {
+  margin: 0 0 10px;
+  font-weight: bold;
+}
+
+.name-entry .duel-name-input {
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.name-entry .btn-primary {
+  margin: 0;
+}
+
+/* Bestenliste-Overlay */
+
+.leaderboard-mode-label {
+  color: #888;
+  font-size: 1rem;
+  margin: 0 0 14px;
+}
+
+.leaderboard-list {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.leaderboard-entry {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: #f6f6ff;
+  font-weight: bold;
+}
+
+.leaderboard-entry:first-child {
+  background: #fff6d8;
+  border: 2px solid var(--color-sun);
+}
+
+.leaderboard-rank {
+  flex-shrink: 0;
+  width: 28px;
+  color: var(--color-purple);
+}
+
+.leaderboard-name {
+  flex: 1;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leaderboard-score {
+  flex-shrink: 0;
+  color: var(--color-grass);
+}
+
+.leaderboard-empty {
+  color: #888;
+  margin: 0 0 14px;
 }
 
 .highscore-msg,
