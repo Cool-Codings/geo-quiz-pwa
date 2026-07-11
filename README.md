@@ -10,7 +10,7 @@ Elf spielbare Modi, wählbar auf dem Start-Bildschirm, sowie ein lokaler
 
 - **Hauptstädte**: "Wie heißt die Hauptstadt von [Land]?"
 - **Länder**: mischt beide Richtungen — Land→Hauptstadt und Hauptstadt→Land
-- **Städte**: "Welche ist die größte Stadt in [Land]?" (größte Stadt ≠ Hauptstadt bei vielen Ländern, z. B. Schweiz/Zürich, Türkei/Istanbul)
+- **Städte**: "Welche ist die größte Stadt in [Land]?" (größte Stadt ≠ Hauptstadt bei vielen Ländern, z. B. Schweiz/Zürich, Türkei/Istanbul). Alle 4 Antwortoptionen stammen aus demselben Land (`cities`-Feld in `countries.json`, 4-5 bekannte Städte je Land) — es werden nie Städte verschiedener Länder gemischt. Länder ohne ausreichend bekannte Städte (z. B. Bhutan, Mongolei) tauchen in diesem Modus nicht auf.
 - **Flüsse**: "Durch welches Land fließt [Fluss]?" (nur für Länder mit bekanntem großen Fluss)
 - **Flaggen**: Flagge wird angezeigt, Antwortoptionen sind Ländernamen
 - **Karte**: interaktive Weltkarte statt Multiple-Choice-Buttons, mit zwei Untermodi
@@ -23,6 +23,7 @@ Elf spielbare Modi, wählbar auf dem Start-Bildschirm, sowie ein lokaler
 Gemeinsame Spiellogik aller Modi:
 
 - Multiple-Choice mit 4 Antwortoptionen, Distraktoren aus derselben Schwierigkeitsstufe, wechseln bei jedem Durchlauf
+- Antwort-Kacheln sind vor der Antwort neutral eingefärbt (Blau/Lila/Orange/Gelb) — Rot und Grün sind ausschließlich für das Feedback nach der Antwort reserviert: die richtige Kachel blinkt kurz grün auf, eine falsch angeklickte Kachel kurz rot
 - 3 Schwierigkeitsstufen (leicht, mittel, schwer), 60 Länder weltweit
 - Zeitlimit pro Frage je nach Schwierigkeit (15 / 12 / 10 Sekunden)
 - Punktesystem mit **pro Modus eigenem** Highscore in `localStorage`

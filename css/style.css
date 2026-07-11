@@ -610,10 +610,12 @@ h1 {
   box-shadow: var(--shadow-soft);
 }
 
-.answer-btn:nth-child(1) { background: var(--color-coral); }
-.answer-btn:nth-child(2) { background: var(--color-sky); }
-.answer-btn:nth-child(3) { background: var(--color-sun); color: #4a3b00; }
-.answer-btn:nth-child(4) { background: var(--color-purple); }
+/* Neutral, non-judgemental colors - no red or green here, those are
+   reserved exclusively for post-answer feedback (.wrong / .correct below). */
+.answer-btn:nth-child(1) { background: var(--color-sky); }
+.answer-btn:nth-child(2) { background: var(--color-purple); }
+.answer-btn:nth-child(3) { background: var(--color-peach); color: #4a2c00; }
+.answer-btn:nth-child(4) { background: var(--color-sun); color: #4a3b00; }
 
 .answer-btn:active:not(:disabled) {
   transform: translateY(4px);

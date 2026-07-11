@@ -75,6 +75,62 @@ function modeLabel(modeId) {
   return t(`mode.${modeId}`);
 }
 
+// City names for the Städte mode's `cities` lists are stored once, in
+// German, per country. Most are proper nouns that read the same in
+// English/Italian; this dictionary covers the notable exceptions so the
+// distractor options stay in the active language without needing a full
+// parallel city list per country.
+const CITY_NAME_TRANSLATIONS = {
+  'München': { en: 'Munich', it: 'Monaco di Baviera' },
+  'Köln': { en: 'Cologne', it: 'Colonia' },
+  'Neapel': { en: 'Naples', it: 'Napoli' },
+  'Mailand': { en: 'Milan', it: 'Milano' },
+  'Genua': { en: 'Genoa', it: 'Genova' },
+  'Venedig': { en: 'Venice', it: 'Venezia' },
+  'Florenz': { en: 'Florence', it: 'Firenze' },
+  'Sevilla': { en: 'Seville', it: 'Siviglia' },
+  'Zaragoza': { en: 'Saragossa', it: 'Saragozza' },
+  'Warschau': { en: 'Warsaw', it: 'Varsavia' },
+  'Krakau': { en: 'Krakow', it: 'Cracovia' },
+  'Breslau': { en: 'Wrocław', it: 'Breslavia' },
+  'Posen': { en: 'Poznań', it: 'Poznań' },
+  'Prag': { en: 'Prague', it: 'Praga' },
+  'Brünn': { en: 'Brno', it: 'Brno' },
+  'Wien': { en: 'Vienna', it: 'Vienna' },
+  'Genf': { en: 'Geneva', it: 'Ginevra' },
+  'Athen': { en: 'Athens', it: 'Atene' },
+  'Thessaloniki': { en: 'Thessaloniki', it: 'Salonicco' },
+  'Den Haag': { en: 'The Hague', it: "L'Aia" },
+  'Sankt Petersburg': { en: 'Saint Petersburg', it: 'San Pietroburgo' },
+  'Moskau': { en: 'Moscow', it: 'Mosca' },
+  'Jekaterinburg': { en: 'Yekaterinburg', it: 'Ekaterinburg' },
+  'Peking': { en: 'Beijing', it: 'Pechino' },
+  'Kairo': { en: 'Cairo', it: 'Il Cairo' },
+  'Alexandria': { en: 'Alexandria', it: "Alessandria d'Egitto" },
+  'Gizeh': { en: 'Giza', it: 'Giza' },
+  'Assuan': { en: 'Aswan', it: 'Assuan' },
+  'Izmir': { en: 'Izmir', it: 'Smirne' },
+  'Rom': { en: 'Rome', it: 'Roma' },
+  'London': { en: 'London', it: 'Londra' },
+  'Tokio': { en: 'Tokyo', it: 'Tokyo' },
+  'Mexiko-Stadt': { en: 'Mexico City', it: 'Città del Messico' },
+  'Lissabon': { en: 'Lisbon', it: 'Lisbona' },
+  'Brüssel': { en: 'Brussels', it: 'Bruxelles' },
+  'Ho-Chi-Minh-Stadt': { en: 'Ho Chi Minh City', it: 'Ho Chi Minh' },
+  'Zürich': { en: 'Zurich', it: 'Zurigo' },
+  'Jerewan': { en: 'Yerevan', it: 'Yerevan' },
+  'Tiflis': { en: 'Tbilisi', it: 'Tbilisi' },
+  'Tripolis': { en: 'Tripoli', it: 'Tripoli' },
+  'Aşgabat': { en: 'Ashgabat', it: 'Ashgabat' },
+  'Duschanbe': { en: 'Dushanbe', it: 'Dushanbe' },
+};
+
+function localizeCityName(name) {
+  if (state.lang === DEFAULT_LANG) return name;
+  const translation = CITY_NAME_TRANSLATIONS[name];
+  return (translation && translation[state.lang]) || name;
+}
+
 const MODES = {
   hauptstaedte: {
     id: 'hauptstaedte',
@@ -118,14 +174,23 @@ const MODES = {
     highscoreKey: 'geoquiz-highscore-staedte',
     unlockedKey: 'geoquiz-unlocked-difficulty-staedte',
     getPool(countries, difficulty) {
-      return countries.filter((c) => c.difficulty === difficulty && c.largestCity);
+      // Needs at least 4 known cities (the real largest city + 3
+      // same-country distractors) - countries without enough well-known
+      // cities are simply not asked about in this mode.
+      return countries.filter((c) => c.difficulty === difficulty && c.cities && c.cities.length >= 4);
     },
-    buildQuestion(entry, pool) {
-      return questionFromField(entry, pool, {
+    buildQuestion(entry) {
+      const correctValue = localizeCityName(entry.largestCity);
+      const distractorPool = entry.cities.filter((city) => city !== entry.largestCity);
+      const distractors = shuffle(distractorPool).slice(0, 3).map(localizeCityName);
+      const options = shuffle([correctValue, ...distractors]);
+      return {
         promptLabel: 'q.largestCityOf',
         promptValue: localizedField(entry, 'country'),
-        answerField: 'largestCity',
-      });
+        promptType: 'text',
+        options,
+        correctIndex: options.indexOf(correctValue),
+      };
     },
   },
   fluesse: {
@@ -844,6 +909,15 @@ el.modeButtons.forEach((btn) => {
   btn.addEventListener('click', () => {
     if (btn.dataset.mode === 'karte') {
       state.karteSubmodesOpen = !state.karteSubmodesOpen;
+      // Clicking the parent "Karte" tile alone (without also tapping a
+      // submode button) must still leave a valid, playable map mode
+      // selected - otherwise "Spiel starten" silently starts whatever
+      // non-map mode was selected before, which looks like the map mode
+      // never starts at all.
+      if (!MAP_MODE_IDS.includes(state.selectedMode)) {
+        state.selectedMode = 'karte-laender';
+        state.selectedDifficulty = 'leicht';
+      }
       renderStartScreen();
       return;
     }
